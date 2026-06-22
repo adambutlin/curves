@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+
+# OS
+.DS_Store
+
+# Large/raw data downloads (re-fetchable from the BoE) — keep the dir, not the payload
+data/raw/*.zip
+data/raw/*.xlsx
+data/raw/_inspect/
+
+# Generated artefacts
+models/*.pkl
+models/*.json
+reports/figures/*.png

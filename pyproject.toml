@@ -1,0 +1,35 @@
+[project]
+name = "giltcurve"
+version = "0.1.0"
+description = "UK Gilt / SONIA OIS yield-curve construction, forward extraction, and term-premium decomposition"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.24",
+    "scipy>=1.10",
+    "pandas>=2.0",
+    "matplotlib>=3.7",
+    "openpyxl>=3.1",
+]
+
+[project.optional-dependencies]
+# Optional industrial libraries used only for cross-validating the from-scratch
+# numpy/scipy engine. The core pipeline does NOT depend on them.
+validate = ["rateslib>=1.5", "QuantLib>=1.33"]
+dev = ["pytest>=7.4"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = [
+    # Upstream dateutil/pandas deprecation on import; not actionable in our code.
+    "ignore::DeprecationWarning:dateutil.tz.tz",
+]
