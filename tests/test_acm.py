@@ -1,6 +1,7 @@
 """Tests for premium/acm.py — resampling, excess returns, VAR(1), three-step OLS."""
 import numpy as np
 import pandas as pd
+import pytest
 
 from giltcurve.premium.acm import (
     PERIODS_PER_YEAR,
@@ -31,6 +32,43 @@ def test_excess_returns_zero_under_constant_flat_curve():
     rx = excess_returns(panel)
     assert rx.shape == (5, 119)
     np.testing.assert_allclose(rx, 0.0, atol=1e-12)
+
+
+def test_excess_returns_known_value_upward_sloping_constant_curve():
+    # Curve constant through time but sloped across maturity: y(n) = a + b*n_years.
+    # With per-period prices p(n) = -n_months*(y_annual*H), the one-period excess
+    # return of the bond aging n -> n-1 is, holding the curve fixed in time:
+    #   rx = p(n-1) - p(n) - p(1)        [since rf = -p(1)]
+    # which is a deterministic function of the (constant) curve.
+    grid = np.arange(1, 121) / 12.0          # years
+    a, b = 0.02, 0.01
+    y = a + b * grid                          # annual yields by maturity
+    Y = np.tile(y, (4, 1))                    # constant through time
+    panel = pd.DataFrame(Y, columns=grid,
+                         index=pd.date_range("2020-01-31", periods=4, freq="ME"))
+    from giltcurve.premium.acm import H
+    n_months = np.arange(1, 121, dtype=float)
+    p = -n_months * (y * H)                   # per-period log prices by maturity
+    rf = (y * H)[0]                           # 1-month per-period yield
+    expected = p[:-1] - p[1:] - rf            # column j: bond (j+2)m -> (j+1)m
+    rx = excess_returns(panel)
+    assert rx.shape == (3, 119)
+    # every period is identical (curve constant in time)
+    for t in range(3):
+        np.testing.assert_allclose(rx[t], expected, atol=1e-12)
+
+
+def test_excess_returns_requires_two_dates():
+    grid = np.arange(1, 121) / 12.0
+    panel = pd.DataFrame(np.full((1, 120), 0.03), columns=grid,
+                         index=pd.to_datetime(["2020-01-31"]))
+    with pytest.raises(ValueError):
+        excess_returns(panel)
+
+
+def test_fit_var1_requires_two_observations():
+    with pytest.raises(ValueError):
+        fit_var1(np.zeros((1, 2)))
 
 
 def test_fit_var1_recovers_known_dynamics():

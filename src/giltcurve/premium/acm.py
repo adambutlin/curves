@@ -49,9 +49,11 @@ def curve_from_yields(maturities, yields, asof=None) -> DiscountCurve:
 def resample_to_monthly_grid(panel: pd.DataFrame, grid=MONTHLY_GRID_YEARS) -> pd.DataFrame:
     """Resample each date's curve onto the monthly maturity grid (1..120 months).
 
-    Returns a DataFrame index=date, columns=maturity(years) on ``grid``. Below the
-    first pillar the curve's flat-zero left behaviour applies (see flagged
-    judgment call: the 1-month node may be extrapolated).
+    Returns a DataFrame index=date, columns=maturity(years) on ``grid``.
+    Below the first pillar, DiscountCurve's t=0 anchor makes interpolation
+    equivalent to holding the zero RATE flat at the first pillar (not flat-forward),
+    so a sub-pillar node like 1-month is effectively extrapolated when the input
+    panel's shortest tenor exceeds 1 month (a flagged judgment call).
     """
     grid = np.asarray(grid, float)
     rows = {}
@@ -75,7 +77,9 @@ def excess_returns(monthly_panel: pd.DataFrame) -> np.ndarray:
     per-period yield; rx_{t+1} = p^{(n-1)}_{t+1} - p^{(n)}_t - r^{(1)}_t.
     """
     Y = monthly_panel.to_numpy(float)
-    n_months = np.round(monthly_panel.columns.to_numpy(float) * PERIODS_PER_YEAR)
+    if Y.shape[0] < 2:
+        raise ValueError("excess_returns needs at least 2 observation dates")
+    n_months = np.arange(1, monthly_panel.shape[1] + 1, dtype=float)
     yp = Y * H                       # per-period yields
     P = -n_months[None, :] * yp      # per-period log prices
     rf = yp[:, 0]                    # 1-month per-period yield
@@ -89,6 +93,8 @@ def fit_var1(factors: np.ndarray):
     ``resid`` rows are the innovations v_{t+1}, aligned to the t+1 index.
     """
     X = np.asarray(factors, float)
+    if X.shape[0] < 2:
+        raise ValueError("fit_var1 needs at least 2 observations")
     X0, X1 = X[:-1], X[1:]
     Z = np.column_stack([np.ones(len(X0)), X0])
     coef, *_ = np.linalg.lstsq(Z, X1, rcond=None)
