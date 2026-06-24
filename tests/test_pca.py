@@ -1,6 +1,7 @@
 """Tests for premium/pca.py — pricing-factor extraction."""
 import numpy as np
 import pandas as pd
+import pytest
 
 from giltcurve.premium.pca import yield_pca
 
@@ -62,3 +63,9 @@ def test_reconstruction_close_to_input():
     res = yield_pca(panel, k=5)
     recon = res.mean + res.factors @ res.loadings.T
     np.testing.assert_allclose(recon, panel.to_numpy(float), atol=5e-4)
+
+
+def test_k_exceeding_maturities_raises():
+    panel = _synthetic_panel()  # 7 maturities
+    with pytest.raises(ValueError):
+        yield_pca(panel, k=9)

@@ -54,8 +54,11 @@ def yield_pca(panel: pd.DataFrame, k: int = 5) -> PCAResult:
     k : number of components to retain.
     """
     Y = panel.to_numpy(float)
-    if Y.shape[0] <= k:
-        raise ValueError("need more observations than components")
+    if k > min(Y.shape[0] - 1, Y.shape[1]):
+        raise ValueError(
+            f"k={k} exceeds available components "
+            f"(need k <= min(T-1={Y.shape[0]-1}, N={Y.shape[1]}))"
+        )
     mean = Y.mean(axis=0)
     Yc = Y - mean
     _, S, Vt = np.linalg.svd(Yc, full_matrices=False)
