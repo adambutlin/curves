@@ -164,7 +164,7 @@ def test_price_of_risk_shapes_and_lstsq_consistency():
 from giltcurve.premium.acm import fit_acm, decompose, ACMResult
 
 
-def _simulate_acm_panel(T=600, K=3, seed=7, lambda_scale=0.0):
+def _simulate_acm_panel(T=600, K=5, seed=7, lambda_scale=0.0):
     """Simulate a yield panel from a known ACM (lambda_scale=0 => no term premium).
 
     Returns an annualised-yield monthly panel on the 1..120m grid.

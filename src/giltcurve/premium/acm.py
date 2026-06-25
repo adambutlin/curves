@@ -120,6 +120,10 @@ def fit_price_of_risk(rx, X_lag, innovations, Sigma):
     rx_{t+1} = a + c X_t + beta v_{t+1} + e.  Cross-sectionally:
         lambda1 = (beta' beta)^-1 beta' C
         lambda0 = (beta' beta)^-1 beta' a*,   a* = a + 0.5(diag(beta Sigma beta') + sigma2)
+
+    If ``beta`` is rank-deficient (e.g. ``k`` exceeds the panel's true factor
+    rank), lstsq returns the minimum-norm ``lambda0``/``lambda1``; treat such a
+    degenerate fit with caution.
     """
     rx = np.asarray(rx, float)
     Xl = np.asarray(X_lag, float)
