@@ -103,3 +103,61 @@ def fit_var1(factors: np.ndarray):
     resid = X1 - Z @ coef
     Sigma = (resid.T @ resid) / resid.shape[0]
     return mu, Phi, Sigma, resid
+
+
+def fit_short_rate(factors: np.ndarray, short_rate_pp: np.ndarray):
+    """OLS of the per-period short rate on factors: r_t = delta0 + delta1' X_t."""
+    X = np.asarray(factors, float)
+    y = np.asarray(short_rate_pp, float)
+    Z = np.column_stack([np.ones(len(X)), X])
+    coef, *_ = np.linalg.lstsq(Z, y, rcond=None)
+    return float(coef[0]), coef[1:]
+
+
+def fit_price_of_risk(rx, X_lag, innovations, Sigma):
+    """ACM step: regress excess returns, recover (lambda0, lambda1, beta, sigma2).
+
+    rx_{t+1} = a + c X_t + beta v_{t+1} + e.  Cross-sectionally:
+        lambda1 = (beta' beta)^-1 beta' C
+        lambda0 = (beta' beta)^-1 beta' a*,   a* = a + 0.5(diag(beta Sigma beta') + sigma2)
+    """
+    rx = np.asarray(rx, float)
+    Xl = np.asarray(X_lag, float)
+    V = np.asarray(innovations, float)
+    T_, M = rx.shape
+    K = Xl.shape[1]
+    Z = np.column_stack([np.ones(T_), Xl, V])
+    coef, *_ = np.linalg.lstsq(Z, rx, rcond=None)        # (1+2K, M)
+    a = coef[0]
+    c = coef[1:1 + K].T                                   # (M, K)
+    beta = coef[1 + K:].T                                 # (M, K)
+    resid = rx - Z @ coef
+    sigma2 = float(np.mean(np.sum(resid ** 2, axis=0) / T_))
+    BSB = np.einsum("mk,kl,ml->m", beta, Sigma, beta)     # diag(beta Sigma beta')
+    a_star = a + 0.5 * (BSB + sigma2)
+    BtB_inv = np.linalg.inv(beta.T @ beta)
+    lambda0 = BtB_inv @ beta.T @ a_star
+    lambda1 = BtB_inv @ beta.T @ c
+    return lambda0, lambda1, beta, sigma2
+
+
+def affine_recursions(mu, Phi, Sigma, sigma2, delta0, delta1, lambda0, lambda1, n_max):
+    """ACM bond-pricing recursions in per-period units. Returns (A, B).
+
+    A: (n_max+1,)  B: (n_max+1, K), with A[0]=0, B[0]=0 and
+        A_{n+1} = A_n + B_n'(mu - lambda0) + 0.5(B_n' Sigma B_n + sigma2) - delta0
+        B_{n+1} = (Phi - lambda1)' B_n - delta1
+    Per-period log price of an n-month bond is p^{(n)} = A_n + B_n' X_t.
+    """
+    mu = np.asarray(mu, float)
+    K = mu.size
+    A = np.zeros(n_max + 1)
+    B = np.zeros((n_max + 1, K))
+    Phi_m = np.asarray(Phi, float) - np.asarray(lambda1, float)
+    mu_m = mu - np.asarray(lambda0, float)
+    d1 = np.asarray(delta1, float)
+    for n in range(n_max):
+        An, Bn = A[n], B[n]
+        A[n + 1] = An + Bn @ mu_m + 0.5 * (Bn @ Sigma @ Bn + sigma2) - delta0
+        B[n + 1] = Phi_m.T @ Bn - d1
+    return A, B

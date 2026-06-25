@@ -90,3 +90,70 @@ def test_fit_var1_recovers_known_dynamics():
 
 def test_periods_per_year_constant():
     assert PERIODS_PER_YEAR == 12
+
+
+from giltcurve.premium.acm import (
+    fit_price_of_risk,
+    fit_short_rate,
+    affine_recursions,
+)
+
+
+def test_short_rate_regression_recovers_linear_map():
+    rng = np.random.default_rng(2)
+    X = rng.standard_normal((500, 3))
+    d0_true, d1_true = 0.002, np.array([0.5, -0.3, 0.1])
+    r = d0_true + X @ d1_true
+    d0, d1 = fit_short_rate(X, r)
+    assert abs(d0 - d0_true) < 1e-9
+    np.testing.assert_allclose(d1, d1_true, atol=1e-9)
+
+
+def test_recursions_zero_risk_equal_fitted_and_riskneutral():
+    # With lambda0=lambda1=0, fitted recursion == risk-neutral recursion.
+    rng = np.random.default_rng(3)
+    K = 3
+    mu = rng.normal(0, 1e-3, K)
+    Phi = 0.9 * np.eye(K)
+    Sigma = np.diag(rng.uniform(1e-5, 1e-4, K))
+    sigma2 = 1e-6
+    d0, d1 = 0.002, rng.normal(0, 0.1, K)
+    A0, B0 = affine_recursions(mu, Phi, Sigma, sigma2, d0, d1,
+                               np.zeros(K), np.zeros((K, K)), n_max=120)
+    A1, B1 = affine_recursions(mu, Phi, Sigma, sigma2, d0, d1,
+                               np.zeros(K), np.zeros((K, K)), n_max=120)
+    np.testing.assert_allclose(A0, A1)
+    np.testing.assert_allclose(B0, B1)
+    assert A0.shape == (121,) and B0.shape == (121, K)
+
+
+def test_one_month_model_yield_matches_short_rate():
+    # The 1-period (n=1) model yield equals the short rate delta0 + delta1'X.
+    rng = np.random.default_rng(4)
+    K = 3
+    mu = rng.normal(0, 1e-3, K)
+    Phi = 0.8 * np.eye(K)
+    Sigma = np.diag(rng.uniform(1e-5, 1e-4, K))
+    sigma2 = 0.0
+    d0, d1 = 0.002, rng.normal(0, 0.1, K)
+    lam0, lam1 = np.zeros(K), np.zeros((K, K))
+    A, B = affine_recursions(mu, Phi, Sigma, sigma2, d0, d1, lam0, lam1, n_max=2)
+    x = rng.standard_normal(K)
+    # per-period 1m yield from model = -(A1 + B1'x)/1
+    y1 = -(A[1] + B[1] @ x)
+    np.testing.assert_allclose(y1, d0 + d1 @ x, atol=1e-12)
+
+
+def test_price_of_risk_shapes_and_lstsq_consistency():
+    rng = np.random.default_rng(5)
+    T, K, M = 600, 3, 50
+    Xl = rng.standard_normal((T, K))
+    V = rng.standard_normal((T, K)) * 0.01
+    Sigma = np.cov(V.T)
+    beta_true = rng.standard_normal((M, K))
+    rx = Xl @ rng.standard_normal((K, M)) * 0.001 + V @ beta_true.T
+    lam0, lam1, beta, sigma2 = fit_price_of_risk(rx, Xl, V, Sigma)
+    assert lam0.shape == (K,)
+    assert lam1.shape == (K, K)
+    assert beta.shape == (M, K)
+    assert sigma2 >= 0.0
