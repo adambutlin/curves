@@ -8,6 +8,9 @@ from giltcurve.premium.acm import (
     resample_to_monthly_grid,
     excess_returns,
     fit_var1,
+    fit_price_of_risk,
+    fit_short_rate,
+    affine_recursions,
 )
 
 
@@ -92,13 +95,6 @@ def test_periods_per_year_constant():
     assert PERIODS_PER_YEAR == 12
 
 
-from giltcurve.premium.acm import (
-    fit_price_of_risk,
-    fit_short_rate,
-    affine_recursions,
-)
-
-
 def test_short_rate_regression_recovers_linear_map():
     rng = np.random.default_rng(2)
     X = rng.standard_normal((500, 3))
@@ -110,7 +106,8 @@ def test_short_rate_regression_recovers_linear_map():
 
 
 def test_recursions_zero_risk_equal_fitted_and_riskneutral():
-    # With lambda0=lambda1=0, fitted recursion == risk-neutral recursion.
+    # No-arbitrage property: lambda only enters from n>=2 (via Phi_m/mu_m), so the
+    # 1-month node is identical for fitted vs risk-neutral, but long maturities differ.
     rng = np.random.default_rng(3)
     K = 3
     mu = rng.normal(0, 1e-3, K)
@@ -118,13 +115,18 @@ def test_recursions_zero_risk_equal_fitted_and_riskneutral():
     Sigma = np.diag(rng.uniform(1e-5, 1e-4, K))
     sigma2 = 1e-6
     d0, d1 = 0.002, rng.normal(0, 0.1, K)
-    A0, B0 = affine_recursions(mu, Phi, Sigma, sigma2, d0, d1,
-                               np.zeros(K), np.zeros((K, K)), n_max=120)
-    A1, B1 = affine_recursions(mu, Phi, Sigma, sigma2, d0, d1,
-                               np.zeros(K), np.zeros((K, K)), n_max=120)
-    np.testing.assert_allclose(A0, A1)
-    np.testing.assert_allclose(B0, B1)
-    assert A0.shape == (121,) and B0.shape == (121, K)
+    lam0 = rng.normal(0, 1e-3, K)
+    lam1 = rng.normal(0, 1e-2, (K, K))
+    A_fit, B_fit = affine_recursions(mu, Phi, Sigma, sigma2, d0, d1, lam0, lam1, n_max=120)
+    A_rn, B_rn = affine_recursions(mu, Phi, Sigma, sigma2, d0, d1,
+                                   np.zeros(K), np.zeros((K, K)), n_max=120)
+    assert A_fit.shape == (121,) and B_fit.shape == (121, K)
+    # 1-month (n=1) node identical: lambda hasn't entered yet
+    np.testing.assert_allclose(A_fit[1], A_rn[1], atol=1e-15)
+    np.testing.assert_allclose(B_fit[1], B_rn[1], atol=1e-15)
+    # long maturities diverge once the price of risk compounds
+    assert not np.allclose(A_fit[120], A_rn[120])
+    assert not np.allclose(B_fit[120], B_rn[120])
 
 
 def test_one_month_model_yield_matches_short_rate():
