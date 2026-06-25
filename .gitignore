@@ -9,9 +9,11 @@ venv/
 # OS
 .DS_Store
 
-# Large/raw data downloads (re-fetchable from the BoE) — keep the dir, not the payload
+# Large/raw data downloads (re-fetchable from the BoE / Fed / NY Fed) — keep the dir, not the payload
 data/raw/*.zip
 data/raw/*.xlsx
+data/raw/*.xls
+data/raw/*.csv
 data/raw/_inspect/
 
 # Generated artefacts
