@@ -159,3 +159,73 @@ def test_price_of_risk_shapes_and_lstsq_consistency():
     assert lam1.shape == (K, K)
     assert beta.shape == (M, K)
     assert sigma2 >= 0.0
+
+
+from giltcurve.premium.acm import fit_acm, decompose, ACMResult
+
+
+def _simulate_acm_panel(T=600, K=3, seed=7, lambda_scale=0.0):
+    """Simulate a yield panel from a known ACM (lambda_scale=0 => no term premium).
+
+    Returns an annualised-yield monthly panel on the 1..120m grid.
+    """
+    from giltcurve.premium.acm import (
+        MONTHLY_GRID_YEARS, PERIODS_PER_YEAR, affine_recursions,
+    )
+    rng = np.random.default_rng(seed)
+    mu = rng.normal(0, 5e-4, K)
+    Phi = 0.97 * np.eye(K) + rng.normal(0, 0.01, (K, K))
+    Sig = np.diag(rng.uniform(1e-6, 4e-6, K))
+    L = np.linalg.cholesky(Sig)
+    d0 = 0.04 / PERIODS_PER_YEAR
+    d1 = rng.normal(0, 1e-3, K)
+    lam0 = lambda_scale * rng.normal(0, 1e-3, K)
+    lam1 = lambda_scale * rng.normal(0, 1e-2, (K, K))
+    A, B = affine_recursions(mu, Phi, Sig, 0.0, d0, d1, lam0, lam1, n_max=120)
+    X = np.zeros((T, K))
+    for t in range(1, T):
+        X[t] = mu + Phi @ X[t - 1] + L @ rng.standard_normal(K)
+    n_months = np.arange(1, 121)
+    pp_yields = -(A[1:][None, :] + X @ B[1:].T) / n_months[None, :]   # per-period
+    annual = pp_yields * PERIODS_PER_YEAR
+    idx = pd.date_range("1990-01-31", periods=T, freq="ME")
+    return pd.DataFrame(annual, columns=MONTHLY_GRID_YEARS, index=idx)
+
+
+def test_fit_acm_returns_result_with_expected_shapes():
+    panel = _simulate_acm_panel(lambda_scale=1.0)
+    res = fit_acm(panel, k=5, currency="TEST")
+    assert isinstance(res, ACMResult)
+    assert res.A.shape == (121,)
+    assert res.B.shape == (121, 5)
+    assert res.currency == "TEST"
+
+
+def test_decompose_term_premium_near_zero_when_no_risk_price():
+    # Panel simulated with lambda=0: term premium must be ~0 at all tenors.
+    panel = _simulate_acm_panel(lambda_scale=0.0)
+    res = fit_acm(panel, k=5, currency="TEST")
+    out = decompose(res, panel)
+    tp = out[out["maturity"].isin([2.0, 5.0, 10.0])]["term_premium"]
+    assert np.nanmax(np.abs(tp.to_numpy(float))) < 15e-4  # < 15bp
+
+
+def test_decompose_fitted_close_to_observed():
+    panel = _simulate_acm_panel(lambda_scale=1.0)
+    res = fit_acm(panel, k=5, currency="TEST")
+    out = decompose(res, panel)
+    err = (out["fitted"] - out["observed"]).to_numpy(float)
+    rmse_bp = np.sqrt(np.nanmean(err ** 2)) * 1e4
+    assert rmse_bp < 10.0  # in-sample fit within 10bp
+
+
+def test_decompose_columns_and_keys():
+    panel = _simulate_acm_panel()
+    res = fit_acm(panel, k=5, currency="GBP")
+    out = decompose(res, panel, maturities=[1, 2, 5, 10])
+    assert list(out.columns) == [
+        "date", "currency", "maturity", "observed", "fitted",
+        "expected_rate", "term_premium",
+    ]
+    assert set(out["maturity"].unique()) == {1.0, 2.0, 5.0, 10.0}
+    assert (out["currency"] == "GBP").all()

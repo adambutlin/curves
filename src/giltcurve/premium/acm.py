@@ -135,9 +135,12 @@ def fit_price_of_risk(rx, X_lag, innovations, Sigma):
     sigma2 = float(np.mean(np.sum(resid ** 2, axis=0) / T_))
     BSB = np.einsum("mk,kl,ml->m", beta, Sigma, beta)     # diag(beta Sigma beta')
     a_star = a + 0.5 * (BSB + sigma2)
-    BtB_inv = np.linalg.inv(beta.T @ beta)
-    lambda0 = BtB_inv @ beta.T @ a_star
-    lambda1 = BtB_inv @ beta.T @ c
+    # Normal-equation solution via least squares: (beta'beta)^-1 beta' y == lstsq(beta, y),
+    # but lstsq degrades gracefully when beta is rank-deficient (e.g. more PCA factors
+    # requested than the cross-section's true rank) instead of exploding through an
+    # ill-conditioned explicit inverse.
+    lambda0 = np.linalg.lstsq(beta, a_star, rcond=None)[0]
+    lambda1 = np.linalg.lstsq(beta, c, rcond=None)[0]
     return lambda0, lambda1, beta, sigma2
 
 
@@ -161,3 +164,88 @@ def affine_recursions(mu, Phi, Sigma, sigma2, delta0, delta1, lambda0, lambda1, 
         A[n + 1] = An + Bn @ mu_m + 0.5 * (Bn @ Sigma @ Bn + sigma2) - delta0
         B[n + 1] = Phi_m.T @ Bn - d1
     return A, B
+
+
+@dataclass
+class ACMResult:
+    """Fitted ACM model. Per-period units internally; decompose() re-annualises."""
+
+    currency: str
+    pca: PCAResult
+    mu: np.ndarray
+    Phi: np.ndarray
+    Sigma: np.ndarray
+    sigma2: float
+    delta0: float
+    delta1: np.ndarray
+    lambda0: np.ndarray
+    lambda1: np.ndarray
+    beta: np.ndarray
+    A: np.ndarray          # fitted recursion (n_max+1,)
+    B: np.ndarray          # fitted recursion (n_max+1, K)
+    A_rn: np.ndarray       # risk-neutral recursion
+    B_rn: np.ndarray
+    grid_years: np.ndarray  # MONTHLY_GRID_YEARS
+
+
+def fit_acm(panel: pd.DataFrame, *, k: int = 5, currency: str, n_max: int = 120) -> ACMResult:
+    """Fit the ACM model to an annualised monthly yield panel.
+
+    ``panel`` may be on any maturity grid; it is resampled to the 1..120-month
+    grid internally. ``currency`` is a pass-through label (never branched on).
+    """
+    grid_panel = resample_to_monthly_grid(panel)
+    pca = yield_pca(grid_panel, k=k)
+    X = pca.factors                                   # (T, K)
+    mu, Phi, Sigma, resid = fit_var1(X)               # innovations aligned to t+1
+    rx = excess_returns(grid_panel)                   # (T-1, N-1)
+    X_lag = X[:-1]
+    lambda0, lambda1, beta, sigma2 = fit_price_of_risk(rx, X_lag, resid, Sigma)
+    short_pp = grid_panel.iloc[:, 0].to_numpy(float) * H   # 1-month per-period yield
+    delta0, delta1 = fit_short_rate(X, short_pp)
+    A, B = affine_recursions(mu, Phi, Sigma, sigma2, delta0, delta1,
+                             lambda0, lambda1, n_max=n_max)
+    A_rn, B_rn = affine_recursions(mu, Phi, Sigma, sigma2, delta0, delta1,
+                                   np.zeros_like(lambda0), np.zeros_like(lambda1),
+                                   n_max=n_max)
+    return ACMResult(currency, pca, mu, Phi, Sigma, sigma2, delta0, delta1,
+                     lambda0, lambda1, beta, A, B, A_rn, B_rn, MONTHLY_GRID_YEARS)
+
+
+def _model_yields(A, B, factors):
+    """Annualised model yields on the 1..120-month grid for given factor rows."""
+    n_months = np.arange(1, B.shape[0])
+    pp = -(A[1:][None, :] + factors @ B[1:].T) / n_months[None, :]
+    return pp * PERIODS_PER_YEAR
+
+
+def decompose(result: ACMResult, panel: pd.DataFrame, maturities=None) -> pd.DataFrame:
+    """Decompose ``panel`` into observed / fitted / expected_rate / term_premium.
+
+    The panel can be monthly (in-sample) or daily (out-of-sample) — its yields are
+    resampled to the monthly grid and projected onto the fitted PCA loadings.
+    ``maturities`` (years) selects reported tenors; default 1..10y integer tenors.
+    Returns a tidy frame keyed (date, currency, maturity).
+    """
+    if maturities is None:
+        maturities = np.arange(1, 11, dtype=float)
+    maturities = np.asarray(maturities, float)
+    grid_panel = resample_to_monthly_grid(panel)
+    obs = grid_panel.to_numpy(float)
+    factors = result.pca.project(obs)
+    fitted = _model_yields(result.A, result.B, factors)
+    riskn = _model_yields(result.A_rn, result.B_rn, factors)
+    term_premium = fitted - riskn
+
+    grid = result.grid_years
+    col_idx = {m: int(np.argmin(np.abs(grid - m))) for m in maturities}
+    records = []
+    for r, date in enumerate(grid_panel.index):
+        for m in maturities:
+            j = col_idx[m]
+            records.append({
+                "date": date, "currency": result.currency, "maturity": float(m),
+                "observed": obs[r, j], "fitted": fitted[r, j],
+                "expected_rate": riskn[r, j], "term_premium": term_premium[r, j],
+            })
+    return pd.DataFrame.from_records(records)
