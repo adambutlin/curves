@@ -89,7 +89,10 @@ def load_gsw_panel(data_dir="data/raw", force: bool = False, max_tenor: int = 10
     """
     path = download_gsw(data_dir, force)
     text = path.read_text("utf-8", "replace").splitlines()
-    hdr = next(i for i, line in enumerate(text) if "SVENY01" in line)
+    hits = [i for i, line in enumerate(text) if "SVENY01" in line]
+    if not hits:
+        raise ValueError("could not find a 'SVENY01' header row in the GSW CSV")
+    hdr = hits[0]
     df = pd.read_csv(io.StringIO("\n".join(text[hdr:])), na_values=["NA"])
     date_col = df.columns[0]
     df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
