@@ -28,19 +28,28 @@ def cross_currency_differentials(panel: pd.DataFrame, tenor: float, base: str = 
     """Per (date, currency) differential of each component vs ``base`` at ``tenor``.
 
     Returns columns: date, currency, exp_rate_diff, term_premium_diff. The base
-    currency is dropped (its differential vs itself is zero).
+    currency is dropped (its differential vs itself is zero). Dates are
+    inner-joined against ``base``, so a currency with shorter history than
+    ``base`` contributes only the dates both cover.
     """
-    at = panel[panel["maturity"] == float(tenor)]
-    base_rows = at[at["currency"] == base].set_index("date")
+    # Exact float equality on maturity is safe only because decompose() casts
+    # integer-year tenors via float(m); pass tenors from that same grid.
+    at_tenor = panel[panel["maturity"] == float(tenor)]
+    if at_tenor.empty:
+        raise ValueError(f"no rows at maturity {tenor} in panel")
+    base_rows = at_tenor[at_tenor["currency"] == base].set_index("date")
+    if base_rows.empty:
+        raise ValueError(f"base currency {base!r} not found in panel at maturity {tenor}")
+
+    cols = ["date", "currency", "exp_rate_diff", "term_premium_diff"]
     out = []
-    for ccy, grp in at[at["currency"] != base].groupby("currency"):
-        g = grp.set_index("date")
-        joined = g.join(base_rows[["expected_rate", "term_premium"]],
-                        rsuffix="_base", how="inner")
-        for date, row in joined.iterrows():
-            out.append({
-                "date": date, "currency": ccy,
-                "exp_rate_diff": row["expected_rate"] - row["expected_rate_base"],
-                "term_premium_diff": row["term_premium"] - row["term_premium_base"],
-            })
-    return pd.DataFrame(out, columns=["date", "currency", "exp_rate_diff", "term_premium_diff"])
+    for ccy, grp in at_tenor[at_tenor["currency"] != base].groupby("currency"):
+        joined = grp.set_index("date").join(
+            base_rows[["expected_rate", "term_premium"]], rsuffix="_base", how="inner"
+        )
+        joined["exp_rate_diff"] = joined["expected_rate"] - joined["expected_rate_base"]
+        joined["term_premium_diff"] = joined["term_premium"] - joined["term_premium_base"]
+        out.append(joined.reset_index()[cols])
+    if not out:
+        return pd.DataFrame(columns=cols)
+    return pd.concat(out, ignore_index=True)
