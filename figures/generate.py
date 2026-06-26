@@ -237,8 +237,10 @@ def fig_pca(ev, cum):
     fig, axes = plt.subplots(1, 3, figsize=(13, 4.4))
     axes[0].bar(pcs, ev, color=US_C)
     axes[0].set_title("Variance explained by component")
-    axes[0].set_xlabel("Principal component")
     axes[0].set_ylabel("Variance explained (%)")
+    pc_names = ["Level", "Slope", "Curvature"] + [str(i) for i in range(4, len(ev) + 1)]
+    axes[0].set_xticks(pcs)
+    axes[0].set_xticklabels(pc_names, rotation=30, ha="right", fontsize=9)
     axes[1].plot(pcs, cum, "-o", color=OFFICIAL_C, lw=1.4)
     axes[1].axhline(100, color="#888888", lw=0.6, ls="--")
     axes[1].set_ylim(98.0, 100.2)
@@ -351,8 +353,10 @@ def fig_summary(us, uk, acm, ev, cum):
     pcs = np.arange(1, len(ev) + 1)
     ax.bar(pcs, ev, color=US_C)
     ax.set_title(f"PCA: variance explained (first 3 PCs ≈ {cum[2]:.2f}%)")
-    ax.set_xlabel("Principal component")
     ax.set_ylabel("Variance explained (%)")
+    pc_names = ["Level", "Slope", "Curvature"] + [str(i) for i in range(4, len(ev) + 1)]
+    ax.set_xticks(pcs)
+    ax.set_xticklabels(pc_names, rotation=30, ha="right", fontsize=8.5)
 
     ax = axes[1, 1]
     ust = ser(us, 10.0, "term_premium") * 100
