@@ -29,10 +29,16 @@ from giltcurve.premium.panel import decomposed_panel
 CORR_FLOOR = 0.95
 LEVEL_RMSE_CEIL_BP = 60.0
 HEADLINE_TENORS = (5.0, 10.0)  # data-supported tenors the anchor is gated on
+SHORT_END_TOL_BP = 25.0  # short-end term premium must be within this of zero
 
 
 def _eom(panel: pd.DataFrame) -> pd.DataFrame:
-    """Resample a daily panel to month-end observations."""
+    """Resample a daily panel to month-end observations.
+
+    Partial-NaN month-end rows are expected (BoE/GSW have gaps at some tenors)
+    and are tolerated downstream: resample_to_monthly_grid masks NaN points
+    per-date before fitting each DiscountCurve.
+    """
     return panel.resample("ME").last().dropna(how="all")
 
 
@@ -44,7 +50,8 @@ def _halt(msg: str) -> None:
 def _by_month(s: pd.Series) -> pd.Series:
     """Index a date-stamped series by calendar month period for robust alignment."""
     s = s.dropna()
-    return pd.Series(s.to_numpy(float), index=pd.DatetimeIndex(s.index).to_period("M"))
+    out = pd.Series(s.to_numpy(float), index=pd.DatetimeIndex(s.index).to_period("M"))
+    return out.groupby(level=0).last()
 
 
 def validate_us() -> pd.DataFrame:
@@ -75,8 +82,9 @@ def validate_us() -> pd.DataFrame:
     # risk-free is extrapolated, biasing the front-end premium low (a documented
     # limitation, not an estimator error -- see README methods note).
     for t in HEADLINE_TENORS:
-        if corrs.get(t, 0.0) < CORR_FLOOR:
-            _halt(f"US anchor {t:.0f}y correlation {corrs.get(t, float('nan')):.2f} < {CORR_FLOOR}.")
+        c = corrs.get(t, 0.0)
+        if c < CORR_FLOOR:
+            _halt(f"US anchor {t:.0f}y correlation {c:.2f} < {CORR_FLOOR}.")
     if rmse_bp.get(10.0, float("inf")) > LEVEL_RMSE_CEIL_BP:
         _halt(f"US 10y term-premium RMSE {rmse_bp[10.0]:.0f}bp > {LEVEL_RMSE_CEIL_BP}bp.")
     print(f"  PASS (gated on {'/'.join(f'{t:.0f}y' for t in HEADLINE_TENORS)}): "
@@ -92,7 +100,7 @@ def shape_tests(out: pd.DataFrame, label: str) -> None:
     mean_tp = out.groupby("maturity")["term_premium"].mean()
     short = mean_tp.loc[mean_tp.index.min()]
     long = mean_tp.loc[mean_tp.index.max()]
-    if abs(short) > 25e-4:
+    if abs(short) > SHORT_END_TOL_BP * 1e-4:
         _halt(f"{label}: short-end term premium {short*1e4:.0f}bp not near zero.")
     if long <= short:
         _halt(f"{label}: term premium not rising with maturity ({short*1e4:.0f}->{long*1e4:.0f}bp).")
