@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="438.48pt" height="541.085812pt" viewBox="0 0 438.48 541.085812" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-06-26T12:04:05.091585</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.8.0, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 541.085812 
+L 438.48 541.085812 
+L 438.48 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="text_1">
+    <g id="patch_2">
+     <path d="M 155.378672 75.75104 
+L 283.101328 75.75104 
+Q 288.351328 75.75104 288.351328 70.50104 
+L 288.351328 48.581305 
+Q 288.351328 43.331305 283.101328 43.331305 
+L 155.378672 43.331305 
+Q 150.128672 43.331305 150.128672 48.581305 
+L 150.128672 70.50104 
+Q 150.128672 75.75104 155.378672 75.75104 
+z
+" style="fill: #eaf2f8; stroke: #0072b2; stroke-width: 1.5; stroke-linejoin: miter"/>
+    </g>
+    <text style="font: 10.5px 'DejaVu Sans'" transform="translate(155.378672 56.559665)">Zero-coupon yield panel</text>
+    <text style="font: 10.5px 'DejaVu Sans'" transform="translate(173.069531 68.317368)">(date × maturity)</text>
+   </g>
+   <g id="text_2">
+    <g id="patch_3">
+     <path d="M 146.206758 150.98312 
+L 292.273242 150.98312 
+Q 297.523242 150.98312 297.523242 145.73312 
+L 297.523242 123.813385 
+Q 297.523242 118.563385 292.273242 118.563385 
+L 146.206758 118.563385 
+Q 140.956758 118.563385 140.956758 123.813385 
+L 140.956758 145.73312 
+Q 140.956758 150.98312 146.206758 150.98312 
+z
+" style="fill: #eaf2f8; stroke: #0072b2; stroke-width: 1.5; stroke-linejoin: miter"/>
+    </g>
+    <text style="font: 10.5px 'DejaVu Sans'" transform="translate(147.153398 131.791745)">PCA  →  K=5 pricing factors</text>
+    <text style="font: 10.5px 'DejaVu Sans'" transform="translate(146.206758 143.549448)">(level / slope / curvature …)</text>
+   </g>
+   <g id="text_3">
+    <g id="patch_4">
+     <path d="M 157.410586 226.225864 
+L 281.069414 226.225864 
+Q 286.319414 226.225864 286.319414 220.975864 
+L 286.319414 199.056129 
+Q 286.319414 193.806129 281.069414 193.806129 
+L 157.410586 193.806129 
+Q 152.160586 193.806129 152.160586 199.056129 
+L 152.160586 220.975864 
+Q 152.160586 226.225864 157.410586 226.225864 
+z
+" style="fill: #eaf2f8; stroke: #0072b2; stroke-width: 1.5; stroke-linejoin: miter"/>
+    </g>
+    <text style="font: 10.5px 'DejaVu Sans'" transform="translate(157.410586 207.013161)">VAR(1) factor dynamics</text>
+    <!-- $X_{t+1}=\mu+\Phi X_t+v_{t+1}$ -->
+    <g transform="translate(163.6425 218.770864)">
+     <text>
+      <tspan style="font: oblique 10.5px 'DejaVu Sans'" x="0 36.963623 64.797852 88.062769" y="-0.984375">XμXv</tspan>
+      <tspan style="font: oblique 7.35px 'DejaVu Sans'" x="7.193115 71.990967 94.276636" y="0.8203125">ttt</tspan>
+      <tspan style="font: 7.35px 'DejaVu Sans'" x="11.506934 19.097388 98.590454 106.180908" y="0.8203125">+1+1</tspan>
+      <tspan style="font: 10.5px 'DejaVu Sans'" x="26.120117 45.689697 56.533203 77.219263" y="-0.984375">=+Φ+</tspan>
+     </text>
+    </g>
+   </g>
+   <g id="text_4">
+    <g id="patch_5">
+     <path d="M 119.07 301.458928 
+L 319.41 301.458928 
+Q 324.66 301.458928 324.66 296.208928 
+L 324.66 274.287225 
+Q 324.66 269.037225 319.41 269.037225 
+L 119.07 269.037225 
+Q 113.82 269.037225 113.82 274.287225 
+L 113.82 296.208928 
+Q 113.82 301.458928 119.07 301.458928 
+z
+" style="fill: #eaf2f8; stroke: #0072b2; stroke-width: 1.5; stroke-linejoin: miter"/>
+    </g>
+    <text style="font: 10.5px 'DejaVu Sans'" transform="translate(168.671836 282.244256)">Market price of risk</text>
+    <!-- $\lambda_0,\ \lambda_1$  (3-step OLS on excess returns) -->
+    <g transform="translate(119.07 294.003928)">
+     <text>
+      <tspan style="font: oblique 10.5px 'DejaVu Sans'" x="0 19.983633" y="-0.640625">λλ</tspan>
+      <tspan style="font: 7.35px 'DejaVu Sans'" x="6.213867 26.1975" y="1.1640625">01</tspan>
+      <tspan style="font: 10.5px 'DejaVu Sans'" x="11.190942 31.174575 34.512222 37.849868 41.946304 48.626724 52.415542 57.886001 62.002944 68.462905 75.127944 78.465591 86.730239 92.580093 99.245132 102.582778 109.006851 115.661636 118.999282 125.459243 131.67311 137.44606 143.906021 149.37648 154.846939 158.184585 162.50148 168.961441 173.078384 179.733169 184.050064 190.704849 196.175308" y="-0.640625">,  (3-step OLS on excess returns)</tspan>
+     </text>
+    </g>
+   </g>
+   <g id="text_5">
+    <g id="patch_6">
+     <path d="M 175.347539 376.67936 
+L 263.132461 376.67936 
+Q 268.382461 376.67936 268.382461 371.42936 
+L 268.382461 349.509625 
+Q 268.382461 344.259625 263.132461 344.259625 
+L 175.347539 344.259625 
+Q 170.097539 344.259625 170.097539 349.509625 
+L 170.097539 371.42936 
+Q 170.097539 376.67936 175.347539 376.67936 
+z
+" style="fill: #eaf2f8; stroke: #0072b2; stroke-width: 1.5; stroke-linejoin: miter"/>
+    </g>
+    <text style="font: 10.5px 'DejaVu Sans'" transform="translate(175.347539 357.487985)">Affine recursions</text>
+    <!-- $A_n,\ B_n$ -->
+    <g transform="translate(202.7025 369.245688)">
+     <text>
+      <tspan style="font: oblique 10.5px 'DejaVu Sans'" x="0 20.934683" y="-0.984375">AB</tspan>
+      <tspan style="font: oblique 7.35px 'DejaVu Sans'" x="7.182861 28.138052" y="0.8203125">nn</tspan>
+      <tspan style="font: 10.5px 'DejaVu Sans'" x="12.141992" y="-0.984375">,</tspan>
+     </text>
+    </g>
+   </g>
+   <g id="patch_7">
+    <path d="M 219.24 84.49458 
+Q 219.24 97.158777 219.24 107.810514 
+" style="fill: none; stroke: #555555; stroke-width: 1.8; stroke-linecap: round"/>
+    <path d="M 221.44 103.410514 
+L 219.24 107.810514 
+L 217.04 103.410514 
+z
+" style="fill: #555555; stroke: #555555; stroke-width: 1.8; stroke-linecap: round"/>
+   </g>
+   <g id="patch_8">
+    <path d="M 219.24 159.72666 
+Q 219.24 172.390857 219.24 183.042594 
+" style="fill: none; stroke: #555555; stroke-width: 1.8; stroke-linecap: round"/>
+    <path d="M 221.44 178.642594 
+L 219.24 183.042594 
+L 217.04 178.642594 
+z
+" style="fill: #555555; stroke: #555555; stroke-width: 1.8; stroke-linecap: round"/>
+   </g>
+   <g id="patch_9">
+    <path d="M 219.24 234.95874 
+Q 219.24 247.622937 219.24 258.274674 
+" style="fill: none; stroke: #555555; stroke-width: 1.8; stroke-linecap: round"/>
+    <path d="M 221.44 253.874674 
+L 219.24 258.274674 
+L 217.04 253.874674 
+z
+" style="fill: #555555; stroke: #555555; stroke-width: 1.8; stroke-linecap: round"/>
+   </g>
+   <g id="patch_10">
+    <path d="M 219.24 310.19082 
+Q 219.24 322.855017 219.24 333.506754 
+" style="fill: none; stroke: #555555; stroke-width: 1.8; stroke-linecap: round"/>
+    <path d="M 221.44 329.106754 
+L 219.24 333.506754 
+L 217.04 329.106754 
+z
+" style="fill: #555555; stroke: #555555; stroke-width: 1.8; stroke-linecap: round"/>
+   </g>
+   <g id="text_6">
+    <g id="patch_11">
+     <path d="M 56.535975 483.017541 
+L 186.867225 483.017541 
+Q 191.867225 483.017541 191.867225 478.017541 
+L 191.867225 457.141604 
+Q 191.867225 452.141604 186.867225 452.141604 
+L 56.535975 452.141604 
+Q 51.535975 452.141604 51.535975 457.141604 
+L 51.535975 478.017541 
+Q 51.535975 483.017541 56.535975 483.017541 
+z
+" style="fill: #e8f6f0; stroke: #009e73; stroke-width: 1.5; stroke-linejoin: miter"/>
+    </g>
+    <text style="font: 10px 'DejaVu Sans'" transform="translate(56.535975 464.740041)">Expected-rate component</text>
+    <text style="font: 10px 'DejaVu Sans'" transform="translate(75.591444 475.937854)">(risk-neutral yield)</text>
+   </g>
+   <g id="text_7">
+    <g id="patch_12">
+     <path d="M 263.557306 483.017541 
+L 369.999494 483.017541 
+Q 374.999494 483.017541 374.999494 478.017541 
+L 374.999494 457.141604 
+Q 374.999494 452.141604 369.999494 452.141604 
+L 263.557306 452.141604 
+Q 258.557306 452.141604 258.557306 457.141604 
+L 258.557306 478.017541 
+Q 258.557306 483.017541 263.557306 483.017541 
+z
+" style="fill: #fdf0e3; stroke: #e69f00; stroke-width: 1.5; stroke-linejoin: miter"/>
+    </g>
+    <text style="font: 10px 'DejaVu Sans'" transform="translate(280.5784 464.740041)">Term premium</text>
+    <text style="font: 10px 'DejaVu Sans'" transform="translate(263.557306 475.937854)">(fitted − risk-neutral)</text>
+   </g>
+   <g id="patch_13">
+    <path d="M 196.347083 389.594201 
+Q 159.86834 412.749704 125.088661 434.826698 
+" style="fill: none; stroke: #555555; stroke-width: 1.8; stroke-linecap: round"/>
+    <path d="M 129.98247 434.326066 
+L 125.088661 434.826698 
+L 127.624441 430.611271 
+z
+" style="fill: #555555; stroke: #555555; stroke-width: 1.8; stroke-linecap: round"/>
+   </g>
+   <g id="patch_14">
+    <path d="M 242.132917 389.594201 
+Q 278.61166 412.749704 313.391339 434.826698 
+" style="fill: none; stroke: #555555; stroke-width: 1.8; stroke-linecap: round"/>
+    <path d="M 310.855559 430.611271 
+L 313.391339 434.826698 
+L 308.49753 434.326066 
+z
+" style="fill: #555555; stroke: #555555; stroke-width: 1.8; stroke-linecap: round"/>
+   </g>
+   <g id="text_8">
+    <text style="font: 700 14px 'DejaVu Sans'; text-anchor: middle" x="219.24" y="17.837812" transform="rotate(-0 219.24 17.837812)">ACM Term-Premium Model — Pipeline</text>
+   </g>
+  </g>
+ </g>
+</svg>

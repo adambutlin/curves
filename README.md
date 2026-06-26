@@ -68,7 +68,7 @@ currency *label* and never branches on it — so the same code runs on US Treasu
 and UK gilts and emits a tidy decomposed panel keyed by `(date, currency,
 maturity)`, ready for a downstream cross-currency-basis project.
 
-![UK 10y gilt: ACM decomposition](reports/figures/gbp_term_premium.png)
+![ACM term-premium model — summary](figures/11_readme_summary.png)
 
 As of Jun 2026 the **10y gilt (≈4.87%)** splits into a **~3.74% expected average
 short rate** and a **~113bp term premium**.
@@ -79,6 +79,8 @@ The estimator is proven on **US Treasuries before it is trusted on gilts** (whic
 have no published benchmark): the *same* code runs on the Fed Board's GSW zero
 curve and must reproduce the **New York Fed's published ACM term premia**
 (1961–2026, 780 monthly observations). The runner **halts** if it doesn't.
+
+![US 10Y term premium: replication vs NY Fed ACM](figures/01_us_validation_10y.png)
 
 | Check | Result | What it proves |
 |---|---|---|
@@ -104,7 +106,12 @@ numpy/scipy on the critical path. Run it:
 
 ```bash
 python3 scripts/run_term_premium.py   # US anchor -> GBP decomposition; halts on failure
+python3 figures/generate.py           # publication-quality figure set (PNG + SVG, 300 dpi)
 ```
+
+The full figure set — per-tenor validation, term-premium heatmaps, the
+cross-country differential, PCA/affine diagnostics, and the model pipeline —
+lives in [`figures/`](figures/) (each as PNG and SVG).
 
 ---
 
@@ -137,6 +144,7 @@ curves/
 │   ├── run_policy_path.py      # SONIA OIS pipeline + validations
 │   └── run_term_premium.py     # ACM: US anchor -> GBP decomposition (halt-on-fail)
 ├── tests/                      # 64 tests (TDD); real-data checks auto-skip offline
+├── figures/                    # publication figure set (style.py + generate.py)
 ├── reports/figures/            # generated charts
 └── notebooks/                  # (narrative analysis — roadmap)
 ```
