@@ -236,10 +236,9 @@ def fig_pca(ev, cum):
     pcs = np.arange(1, len(ev) + 1)
     fig, axes = plt.subplots(1, 3, figsize=(13, 4.4))
     axes[0].bar(pcs, ev, color=US_C)
-    axes[0].set_yscale("log")
-    axes[0].set_title("Scree plot")
+    axes[0].set_title("Variance explained by component")
     axes[0].set_xlabel("Principal component")
-    axes[0].set_ylabel("Variance explained (%, log)")
+    axes[0].set_ylabel("Variance explained (%)")
     axes[1].plot(pcs, cum, "-o", color=OFFICIAL_C, lw=1.4)
     axes[1].axhline(100, color="#888888", lw=0.6, ls="--")
     axes[1].set_ylim(98.0, 100.2)
@@ -351,10 +350,9 @@ def fig_summary(us, uk, acm, ev, cum):
     ax = axes[1, 0]
     pcs = np.arange(1, len(ev) + 1)
     ax.bar(pcs, ev, color=US_C)
-    ax.set_yscale("log")
-    ax.set_title(f"PCA scree (first 3 PCs ≈ {cum[2]:.2f}%)")
+    ax.set_title(f"PCA: variance explained (first 3 PCs ≈ {cum[2]:.2f}%)")
     ax.set_xlabel("Principal component")
-    ax.set_ylabel("Variance explained (%, log)")
+    ax.set_ylabel("Variance explained (%)")
 
     ax = axes[1, 1]
     ust = ser(us, 10.0, "term_premium") * 100
