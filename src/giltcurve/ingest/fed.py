@@ -46,7 +46,6 @@ import io
 import urllib.request
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 GSW_URL = "https://www.federalreserve.gov/data/yield-curve-tables/feds200628.csv"
