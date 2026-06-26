@@ -9,12 +9,18 @@ venv/
 # OS
 .DS_Store
 
-# Large/raw data downloads (re-fetchable from the BoE) — keep the dir, not the payload
+# Large/raw data downloads (re-fetchable from the BoE / Fed / NY Fed) — keep the dir, not the payload
 data/raw/*.zip
 data/raw/*.xlsx
+data/raw/*.xls
+data/raw/*.csv
 data/raw/_inspect/
 
 # Generated artefacts
 models/*.pkl
 models/*.json
+# Scratch figures are ignored, but the curated figures shown in the README are tracked.
 reports/figures/*.png
+!reports/figures/implied_policy_path.png
+!reports/figures/ois_curve.png
+!reports/figures/gbp_term_premium.png
