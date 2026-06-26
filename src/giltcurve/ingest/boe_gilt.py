@@ -160,8 +160,17 @@ def load_gilt_history(data_dir="data/raw", sheet=SPOT_SHEET) -> pd.DataFrame:
     Keeps the last occurrence of any duplicated date. Used for the multi-decade
     ACM estimation panel. Call ``download_gilt_history`` first to populate
     ``data_dir`` with the full 1979-present archive.
+
+    The dated year-range files are non-overlapping by construction; the only
+    overlap is the current-month workbook vs. the "_2025 to present" rolling
+    vintage. We force the current-month file to sort LAST so that, under
+    ``keep="last"``, its FRESH values win on shared dates rather than being
+    overwritten by the staler rolling-history vintage.
     """
-    files = sorted(Path(data_dir).glob("*Nominal*.xlsx"))
+    files = sorted(
+        Path(data_dir).glob("*Nominal*.xlsx"),
+        key=lambda f: ("current month" in f.name, f.name),
+    )
     if not files:
         raise FileNotFoundError("no '*Nominal*.xlsx' gilt workbooks in data dir")
     frames = []
