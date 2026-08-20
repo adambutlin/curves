@@ -157,7 +157,6 @@ src/giltcurve/
                            them once instead of four times.
     bundesbank.py     NEW  BBSIS daily Svensson zero yields (1/2/5/10/30y)
     fred.py           NEW  fredgraph CSV: Brent, GBPUSD, DGS10/30, T10YIE
-    dmo.py            NEW  gilt operations results, gilts in issue, net issuance
     fed.py            EDIT add `ACM Daily` sheet reader (the workbook is already
                            downloaded; only the monthly sheet is currently used)
   episode/
@@ -337,7 +336,6 @@ the `captioning-figures` skill. No dashboard.
 | NY Fed | published ACM, monthly **and daily** sheets | `newyorkfed.org/medialibrary/media/research/data_indicators/ACMTermPremium.xls` |
 | Bundesbank | daily Svensson Bund zeros | `api.statistiken.bundesbank.de/rest/download/BBSIS/D.I.ZST.ZI.EUR.S1311.B.A604.R{nn}XX.R.A.A._Z._Z.A?format=csv` |
 | FRED | Brent, GBPUSD, DGS10/30, T10YIE | `fred.stlouisfed.org/graph/fredgraph.csv?id=<series>` |
-| DMO | gilt operations, gilts in issue, gross/net issuance | `dmo.gov.uk/data/gilt-market/` |
 
 Coverage confirmed to 19–20 Aug 2026 on every gilt, OIS, breakeven and US series.
 
@@ -378,3 +376,23 @@ explicit long timeout; this is an environment quirk to handle, not a BoE outage.
 Maximum investment insight per unit of additional modelling complexity. Every
 addition above buys an answer to a question a PM will actually ask. ACM is used
 for diagnosis, never prediction, and no forecasting skill is claimed from it.
+
+## 19. Amendment 2026-08-20 (post-approval, pre-implementation)
+
+`ingest/dmo.py` is **dropped**. The DMO data pages sit behind a
+ShieldSquare/perfdrive captcha wall and return a captcha shell rather than
+markup to any programmatic client — verified by direct request on 2026-08-20.
+There is no machine-readable DMO endpoint to build against.
+
+Step 6 (§11) is unaffected in substance. `episode/supply.py` instead carries a
+small, hand-curated, individually source-cited constants table transcribed from
+the published DMO remit and BoE APF market notices — 2026-27 gross financing
+£252.1bn, long conventional £8.0bn (3.2%), index-linked £16.5bn (6.5%), APF
+reduction £70bn over Oct 2025–Sep 2026 — and computes net DV01 supplied to
+private investors from it.
+
+This is arguably the better design regardless: T1 is a small comparison table,
+not a time series, so a cited constants table is more legible to a PM and
+carries no scraping fragility. The cost is that supply figures must be updated
+by hand when the Autumn Budget and the 17 Sep QT review land — which the note
+must state.
