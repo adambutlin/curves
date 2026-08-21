@@ -7,10 +7,16 @@ we slice on announcement dates.
 
 NOTE ON PROVENANCE
 ------------------
-2024-2025 are the BoE's published/realised announcement dates. 2026-2027 follow
-the BoE's regular ~6-weekly cadence and should be reconciled against the
-official calendar before any production use:
+2024-2025 are the BoE's published/realised announcement dates. 2026-2027 were
+originally projected from the BoE's ~6-weekly meeting cadence, and that
+projection was wrong: the real cadence is irregular around the months carrying
+a Monetary Policy Report, so simple arithmetic drifted the Apr/Aug/May-ish
+meetings by about a week. On 2026-08-20 the 2026-2027 entries were reconciled
+against the published calendar:
 https://www.bankofengland.co.uk/monetary-policy/upcoming-mpc-dates
+2026 is confirmed; 2027 is provisional -- the BoE itself labels it that way,
+and it may still move. 2028+ is not yet on the calendar and will need the same
+reconciliation once published; do not re-derive it from the ~6-weekly cadence.
 This list is deliberately a plain constant so it is trivial to update.
 """
 from __future__ import annotations
@@ -27,12 +33,12 @@ MPC_ANNOUNCEMENT_DATES: List[dt.date] = [
     # 2025 (scheduled/realised)
     D(2025, 2, 6), D(2025, 3, 20), D(2025, 5, 8), D(2025, 6, 19),
     D(2025, 8, 7), D(2025, 9, 18), D(2025, 11, 6), D(2025, 12, 18),
-    # 2026 (projected from BoE cadence -- verify)
-    D(2026, 2, 5), D(2026, 3, 19), D(2026, 5, 7), D(2026, 6, 18),
-    D(2026, 8, 6), D(2026, 9, 17), D(2026, 11, 5), D(2026, 12, 17),
-    # 2027 (projected -- verify)
-    D(2027, 2, 4), D(2027, 3, 18), D(2027, 5, 6), D(2027, 6, 17),
-    D(2027, 8, 5), D(2027, 9, 16), D(2027, 11, 4), D(2027, 12, 16),
+    # 2026 (published BoE calendar, reconciled 2026-08-20 -- no longer projected)
+    D(2026, 2, 5), D(2026, 3, 19), D(2026, 4, 30), D(2026, 6, 18),
+    D(2026, 7, 30), D(2026, 9, 17), D(2026, 11, 5), D(2026, 12, 17),
+    # 2027 (published BoE calendar, provisional -- reconciled 2026-08-20)
+    D(2027, 2, 4), D(2027, 3, 18), D(2027, 4, 29), D(2027, 6, 17),
+    D(2027, 7, 29), D(2027, 9, 16), D(2027, 11, 4), D(2027, 12, 16),
 ]
 
 
