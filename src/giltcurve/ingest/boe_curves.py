@@ -28,7 +28,22 @@ Quirks verified against the live site (2026-08-20/21):
     sheet names by pattern: whitespace-normalise, then accept ``"<n>. [prefix
     ]spot curve"`` for any leading sheet number and optional nominal/real/inf
     prefix. This is derived from live inspection of every workbook, not a
-    guess.
+    guess. It raises if more than one sheet matches, rather than silently
+    picking whichever came first.
+  * The history archive refreshes fortnightly, same as the current-month
+    archive refreshes daily -- both determine currency, so both need a
+    freshness check rather than indefinite caching. ``download_history``
+    passes ``max_age_days=1`` to ``fetch``.
+  * Pre-2016 OIS workbooks carry tenor values with float rounding noise
+    (e.g. ``0.49999999999999994`` alongside 2016+'s exact ``0.5``), so a
+    naive concat of vintages produces duplicate tenor columns and a
+    non-monotonic column index. ``_tidy_tenor_columns`` collapses columns
+    that agree to 6dp and sorts the result; applied to every kind, since
+    nominal/real/inflation are only accidentally sorted today by having
+    uniform tenor grids across vintages. Note the OIS panel is genuinely not
+    a rectangle: pre-2016 rows have nothing beyond 5y (that vintage's curve
+    stops there) and post-2016 rows have nothing below 0.5y (the short end
+    lives on sheet 3 and is correctly excluded here).
   * Values are in percent; ``parse_ois_sheet`` converts to decimals.
 """
 from __future__ import annotations
@@ -39,6 +54,7 @@ import zipfile
 from dataclasses import dataclass
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from giltcurve.ingest._http import fetch
@@ -90,36 +106,43 @@ def _extract_member(zip_path: Path, dest_dir: Path, predicate) -> list[Path]:
     with zipfile.ZipFile(zip_path) as zf:
         names = [n for n in zf.namelist() if predicate(n)]
         for name in names:
-            zf.extract(name, dest_dir)
-            out.append(dest_dir / name)
+            out.append(Path(zf.extract(name, dest_dir)))
         if out:
             return out
         for inner in (n for n in zf.namelist() if n.endswith(".zip")):
             with zipfile.ZipFile(io.BytesIO(zf.read(inner))) as zf2:
                 for name in (n for n in zf2.namelist() if predicate(n)):
-                    zf2.extract(name, dest_dir)
-                    out.append(dest_dir / name)
+                    out.append(Path(zf2.extract(name, dest_dir)))
     return out
 
 
 def download_history(kind: str, data_dir="data/raw", force: bool = False) -> list[Path]:
-    """Download + extract the multi-decade history archive for ``kind``."""
+    """Download + extract the multi-decade history archive for ``kind``.
+
+    The archive refreshes roughly fortnightly, so a cached copy older than a
+    day is treated as stale and re-fetched (``max_age_days=1``) -- otherwise
+    an indefinitely-cached copy can silently leave a multi-week hole between
+    the end of history and the start of the current-month workbook.
+    """
     spec = _spec(kind)
     data_dir = Path(data_dir)
     zip_path = data_dir / spec.archive
-    fetch(f"{BASE_URL}/{spec.archive}", zip_path, force=force)
+    fetch(f"{BASE_URL}/{spec.archive}", zip_path, force=force, max_age_days=1)
     return _extract_member(
         zip_path, data_dir,
         lambda n: spec.workbook_token in n and n.endswith(".xlsx"),
     )
 
 
-def download_current_month(kind: str, data_dir="data/raw", force: bool = False) -> list[Path]:
-    """Download + extract the current-month workbook for ``kind``."""
+def download_current_month(kind: str, data_dir="data/raw") -> list[Path]:
+    """Download + extract the current-month workbook for ``kind``.
+
+    Always refreshes: this archive is the whole point of being current, so
+    there is no ``force`` parameter to ignore.
+    """
     spec = _spec(kind)
     data_dir = Path(data_dir)
     zip_path = data_dir / LATEST_ARCHIVE
-    # Always refresh: this archive is the whole point of being current.
     fetch(f"{BASE_URL}/{LATEST_ARCHIVE}", zip_path, force=True)
     return _extract_member(
         zip_path, data_dir,
@@ -131,18 +154,48 @@ def _resolve_spot_sheet(path: Path, sheet: str | None) -> str:
     if sheet is not None:
         return sheet
     names = pd.ExcelFile(path).sheet_names
-    for name in names:
-        normalized = re.sub(r"\s+", " ", name.strip())
-        if _SPOT_SHEET_RE.match(normalized):
-            return name
-    raise ValueError(f"no spot-curve sheet found in {path}; sheets={names}")
+    matches = [
+        name for name in names
+        if _SPOT_SHEET_RE.match(re.sub(r"\s+", " ", name.strip()))
+    ]
+    if not matches:
+        raise ValueError(f"no spot-curve sheet found in {path}; sheets={names}")
+    if len(matches) > 1:
+        raise ValueError(f"ambiguous spot-curve sheet in {path}: matches={matches}")
+    return matches[0]
+
+
+def _tidy_tenor_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Collapse float-noise duplicate tenor columns and sort columns ascending.
+
+    Pre-2016 OIS workbooks carry tenor values that are equal to 2016+'s to
+    within float noise but not exactly (``0.49999999999999994`` vs ``0.5``),
+    so concatenating vintages produces duplicate columns under exact float
+    equality. Rounding to 6dp before grouping collapses these; the vintages
+    are non-overlapping in date range, so at most one of the duplicate
+    columns is non-NaN for any given row, and ``GroupBy.first()`` keeps
+    whichever one has the value.
+    """
+    if df.empty:
+        return df
+    tidy = df.copy()
+    tidy.columns = np.round(np.asarray(tidy.columns, dtype=float), 6)
+    tidy = tidy.T.groupby(level=0).first().T
+    return tidy.sort_index(axis=1)
 
 
 def merge_panels(history: pd.DataFrame, current: pd.DataFrame) -> pd.DataFrame:
-    """Concatenate, letting ``current`` win on shared dates, then drop empty rows."""
-    panel = pd.concat([history, current]).sort_index()
+    """Concatenate, letting ``current`` win on shared dates, then drop empty rows.
+
+    Dedupes BEFORE sorting: ``concat`` order (history then current) is
+    guaranteed, but ``sort_index``'s default quicksort is unstable, so
+    deduping after sorting would let ``keep="last"`` pick arbitrarily between
+    a history row and a current row that land on the same timestamp --
+    silently preferring the stale history value roughly half the time.
+    """
+    panel = pd.concat([history, current])
     panel = panel[~panel.index.duplicated(keep="last")]
-    return panel.dropna(how="all")
+    return panel.sort_index().dropna(how="all")
 
 
 def load_curve(kind: str, data_dir="data/raw", sheet: str | None = None,
@@ -150,12 +203,17 @@ def load_curve(kind: str, data_dir="data/raw", sheet: str | None = None,
     """Full daily panel for ``kind``: index=date, columns=maturity(years), decimal."""
     spec = _spec(kind)
     hist_files = download_history(kind, data_dir, force=force)
-    cur_files = download_current_month(kind, data_dir, force=force)
+    cur_files = download_current_month(kind, data_dir)
     if not hist_files:
         raise FileNotFoundError(f"no {spec.workbook_token!r} workbooks in {spec.archive}")
+    if not cur_files:
+        raise FileNotFoundError(
+            f"no {spec.current_month_member!r} member in {LATEST_ARCHIVE}"
+        )
 
     def _read(paths):
         frames = [parse_ois_sheet(p, _resolve_spot_sheet(p, sheet)) for p in paths]
         return pd.concat(frames).sort_index() if frames else pd.DataFrame()
 
-    return merge_panels(_read(sorted(hist_files)), _read(cur_files))
+    merged = merge_panels(_read(sorted(hist_files)), _read(cur_files))
+    return _tidy_tenor_columns(merged)
