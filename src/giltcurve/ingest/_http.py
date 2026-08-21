@@ -7,7 +7,9 @@ tries ``urllib`` first and falls back to the ``curl`` binary.
 
 Downloads are written to a temporary sibling and moved into place only on
 success, so a failed fetch never leaves a truncated file that a later cached
-read would happily return.
+read would happily return -- this covers both a mid-download error and a
+200 response with an empty body, which is plausible for the very BoE CDN
+that already misbehaves here.
 """
 from __future__ import annotations
 
@@ -34,11 +36,18 @@ def _curl_download(url: str, dest: Path, timeout: int) -> None:
         raise RuntimeError(f"curl exited {proc.returncode} for {url}: {proc.stderr.strip()}")
 
 
-def fetch(url: str, dest, *, force: bool = False, timeout: int = DEFAULT_TIMEOUT) -> bytes:
-    """Download ``url`` to ``dest`` (cached unless ``force``) and return its bytes."""
+def fetch(url: str, dest: str | Path, *, force: bool = False, timeout: int = DEFAULT_TIMEOUT) -> Path:
+    """Download ``url`` to ``dest`` (cached unless ``force``) and return its path.
+
+    Returns the path rather than the bytes so callers that hand the file to
+    ``zipfile`` or ``read_excel`` -- which is most of them, and the ones
+    fetching the largest archives -- do not pay for a pointless full read of a
+    file that was just written. Callers wanting the content call
+    ``.read_bytes()`` / ``.read_text()``.
+    """
     dest = Path(dest)
     if dest.exists() and not force:
-        return dest.read_bytes()
+        return dest
 
     dest.parent.mkdir(parents=True, exist_ok=True)
     tmp = dest.with_suffix(dest.suffix + ".part")
@@ -47,8 +56,10 @@ def fetch(url: str, dest, *, force: bool = False, timeout: int = DEFAULT_TIMEOUT
             _urllib_download(url, tmp, timeout)
         except Exception:
             _curl_download(url, tmp, timeout)
+        if tmp.stat().st_size == 0:
+            raise RuntimeError(f"downloaded 0 bytes for {url}")
     except Exception:
         tmp.unlink(missing_ok=True)
         raise
     tmp.replace(dest)
-    return dest.read_bytes()
+    return dest
