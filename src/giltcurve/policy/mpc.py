@@ -1,9 +1,9 @@
 """Bank of England MPC meeting-date calendar.
 
 The implied-policy-path slicing only needs the dates on which Bank Rate can
-change. Rate decisions are announced on the meeting date and take effect the
-following business day; that one-day shift is immaterial to the path shape, so
-we slice on announcement dates.
+change. Rate decisions are announced on the meeting date -- always a Thursday
+-- and take effect the following business day; that one-day shift is
+immaterial to the path shape, so we slice on announcement dates.
 
 NOTE ON PROVENANCE
 ------------------
@@ -14,6 +14,8 @@ a Monetary Policy Report, so simple arithmetic drifted the Apr/Aug/May-ish
 meetings by about a week. On 2026-08-20 the 2026-2027 entries were reconciled
 against the published calendar:
 https://www.bankofengland.co.uk/monetary-policy/upcoming-mpc-dates
+(page last updated 26 May 2026 -- the page rolls forward to show later years,
+so a newer read of it may show different or additional dates than this one).
 2026 is confirmed; 2027 is provisional -- the BoE itself labels it that way,
 and it may still move. 2028+ is not yet on the calendar and will need the same
 reconciliation once published; do not re-derive it from the ~6-weekly cadence.
