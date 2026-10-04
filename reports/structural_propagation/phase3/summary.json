@@ -1,0 +1,7 @@
+{
+  "seed": 20261007,
+  "n_draws": 1000,
+  "n_placebo": 1000,
+  "n_oos_draws": 200,
+  "runtime_seconds": 127.6
+}

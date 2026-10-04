@@ -1,0 +1,29 @@
+{
+  "seed": 20261004,
+  "n_draws": 1000,
+  "n_placebo": 1000,
+  "n_oos_draws": 200,
+  "sample": [
+    "1983-01-03",
+    "2025-12-31",
+    10720
+  ],
+  "daily_sd_bp": {
+    "dy2": 5.596,
+    "dy5": 6.253,
+    "dy10": 6.16
+  },
+  "sd_20d_change_10y_bp": 28.284151698946914,
+  "replication_1983_2017": {
+    "share_2y_growth_plus_monetary": 0.7707178414941978,
+    "share_equity_premia": 0.5763765227903773,
+    "share_equity_growth": 0.2235876642403335,
+    "share_equity_monetary": 0.09912445694887183,
+    "monetary_impact_2y_bp": 3.549369804743088,
+    "acceptance_rate": 0.0224
+  },
+  "acceptance_rate_baseline": 0.02144,
+  "acceptance_rate_benchmark": 0.0235,
+  "frozen_model_sha256": "cafa5f25144f8a4946f69cdf099c54be9709f8824b90f4c2aeb44d317765e7b8",
+  "runtime_seconds": 112.4
+}

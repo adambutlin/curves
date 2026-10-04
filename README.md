@@ -1,4 +1,45 @@
-# UK Gilt / SONIA OIS Yield-Curve Construction, Forward Extraction & Term-Premium Decomposition
+# Sovereign Yield Curves: Structural Origins, Propagation and Term Premia
+
+## Current research: does the origin of a yield move predict what follows?
+
+A rise in sovereign yields is not itself a shock: the same 15bp move can come from
+monetary repricing, growth news, inflation news or a change in risk compensation.
+The current programme asks whether knowing **why** yields moved today says anything
+about **how** the curve evolves over the next 1-20 trading days. A daily
+sign-restricted Bayesian VAR (after Cieslak and Pang, 2021) extracts growth,
+monetary, common-premium and hedging-premium shocks from Treasury yields and
+equities; propagation tests then condition on the observed move and compare the
+structural state with momentum, curve-state and reduced-form benchmarks, in sample
+and in real time. 2026 is held out and sealed in the data layer.
+
+**Result so far (US Treasuries, 1983-2025; three pre-registered designs).** The
+published Cieslak-Pang decomposition is reproduced almost exactly. In sign, origin
+matters: moves driven by news about the expected course of policy rates continue, while
+risk-premium shocks do not, most clearly when bonds and stocks fall together. As a
+forecasting claim about the 10-year yield the answer is no: the effect explains at most
+a fraction of a percent of subsequent variance, a random split of the same news does
+about as well, and nothing beats a no-change forecast in real time, whether the shocks
+are identified once, within stock-bond regimes, or with large news treated separately.
+The continuation that exists sits in ordinary-sized news; large, salient policy news is
+priced at once.
+
+- Overview and reading order: [docs/research/structural-propagation/README.md](docs/research/structural-propagation/README.md)
+- MVP results: [03-mvp-results.md](docs/research/structural-propagation/03-mvp-results.md); regime-dependent identification: [05-phase2-results.md](docs/research/structural-propagation/05-phase2-results.md); size of news: [07-phase3-results.md](docs/research/structural-propagation/07-phase3-results.md)
+- Figures and tables: [reports/structural_propagation/](reports/structural_propagation/)
+
+```bash
+python scripts/run_structural_propagation.py      # MVP: estimation, tests, real-time evaluation (~2 min)
+python scripts/run_phase2_regimes.py              # regime-specific identification (~1.5 min)
+python scripts/run_phase3_size.py                 # size-dependent propagation (~2 min)
+python scripts/plot_structural_propagation.py     # figures
+```
+
+---
+
+## Curve construction and term-premium toolkit
+
+The infrastructure below supplies the yield curves and the term-premium model the
+research uses.
 
 A research-grade fixed-income project that reads **what the market prices about
 future monetary policy, inflation and risk premia** out of UK rates. The spine
@@ -36,15 +77,6 @@ pricing library on the critical path — so the mathematics is fully inspectable
 `rateslib` / `QuantLib` are wired in only as optional cross-validation
 (`pip install -e ".[validate]"`).
 
-### Headline result (BoE curve, as of 19 Jun 2026)
-
-![implied policy path](reports/figures/implied_policy_path.png)
-
-The front end prices a gradual rise in forward SONIA of **~+45bp to end-2027**.
-Note this is the *raw* forward path, which conflates expected policy with term
-premium — disentangling the two is the next phase (ACM), and is exactly why the
-term-premium decomposition matters.
-
 ### Validation (on real BoE data, reported by the runner)
 
 | Check | Result | What it proves |
@@ -68,8 +100,6 @@ currency *label* and never branches on it — so the same code runs on US Treasu
 and UK gilts and emits a tidy decomposed panel keyed by `(date, currency,
 maturity)`, ready for a downstream cross-currency-basis project.
 
-![ACM term-premium model — summary](figures/11_readme_summary.png)
-
 As of Jun 2026 the **10y gilt (≈4.87%)** splits into a **~3.74% expected average
 short rate** and a **~113bp term premium**.
 
@@ -79,8 +109,6 @@ The estimator is proven on **US Treasuries before it is trusted on gilts** (whic
 have no published benchmark): the *same* code runs on the Fed Board's GSW zero
 curve and must reproduce the **New York Fed's published ACM term premia**
 (1961–2026, 780 monthly observations). The runner **halts** if it doesn't.
-
-![US 10Y term premium: replication vs NY Fed ACM](figures/01_us_validation_10y.png)
 
 | Check | Result | What it proves |
 |---|---|---|
@@ -106,12 +134,7 @@ numpy/scipy on the critical path. Run it:
 
 ```bash
 python3 scripts/run_term_premium.py   # US anchor -> GBP decomposition; halts on failure
-python3 figures/generate.py           # publication-quality figure set (PNG + SVG, 300 dpi)
 ```
-
-The full figure set — per-tenor validation, term-premium heatmaps, the
-cross-country differential, PCA/affine diagnostics, and the model pipeline —
-lives in [`figures/`](figures/) (each as PNG and SVG).
 
 ---
 
@@ -121,7 +144,7 @@ lives in [`figures/`](figures/) (each as PNG and SVG).
 curves/
 ├── data/
 │   ├── raw/            # BoE / Fed / NY Fed downloads (re-fetchable; git-ignored)
-│   └── processed/      # implied_policy_path.csv, term_premium_panel.csv
+│   └── processed/      # runner outputs (regenerable; git-ignored)
 ├── src/giltcurve/
 │   ├── conventions.py          # day-count, spot<->DF (continuous)
 │   ├── ingest/
@@ -139,21 +162,24 @@ curves/
 │   │   ├── pca.py              # PCA pricing factors (level/slope/curvature)
 │   │   ├── acm.py              # ACM term-premium decomposition (from scratch)
 │   │   └── panel.py            # decomposed panel + cross-currency differentials
+│   ├── propagation/            # structural-origins study: data (2026 sealed), BVAR,
+│   │                           #   sign restrictions, propagation tests, real-time evaluation
 │   └── viz/plots.py            # desk-style charts
 ├── scripts/
 │   ├── run_policy_path.py      # SONIA OIS pipeline + validations
-│   └── run_term_premium.py     # ACM: US anchor -> GBP decomposition (halt-on-fail)
-├── tests/                      # 64 tests (TDD); real-data checks auto-skip offline
-├── figures/                    # publication figure set (style.py + generate.py)
-├── reports/figures/            # generated charts
-└── notebooks/                  # (narrative analysis — roadmap)
+│   ├── run_term_premium.py     # ACM: US anchor -> GBP decomposition (halt-on-fail)
+│   └── *structural_propagation.py, run_phase2_regimes.py, run_phase3_size.py
+├── docs/research/structural-propagation/   # design, pre-registrations, results
+├── reports/structural_propagation/         # figures, tables, frozen end-2025 model
+├── reports/figures/            # toolkit charts (generated; git-ignored)
+└── tests/                      # 117 tests; real-data checks auto-skip offline
 ```
 
 ## Quickstart
 
 ```bash
 python3 -m pip install -e ".[dev]"   # or: pip install numpy scipy pandas matplotlib openpyxl xlrd pytest
-python3 -m pytest                    # 64 passing (network-gated ingest checks auto-skip offline)
+python3 -m pytest                    # 117 passing (network-gated ingest checks auto-skip offline)
 python3 scripts/run_policy_path.py   # downloads BoE curve, prints path + validations, saves charts
 python3 scripts/run_term_premium.py  # US anchor -> GBP ACM term-premium decomposition
 ```
@@ -175,7 +201,7 @@ python3 scripts/run_term_premium.py  # US anchor -> GBP ACM term-premium decompo
 | Yield-curve PCA | `premium/pca.py` | **done** — level/slope/curvature; >99.9% of variance in first 3 PCs |
 | **Term premium (ACM)** | `premium/acm.py` | **done** — currency-agnostic ACM; reproduces NY Fed ACM (10y corr 1.00) |
 | Breakeven decomposition | `inflation/breakevens.py` | nominal vs index-linked gilts; **RPI wedge** + 2030 reform |
-| Cross-checks & divergence | `notebooks/` | implied path vs Consensus; flag pricing inconsistent with fundamentals |
+| Cross-checks & divergence | (not started) | implied path vs Consensus; flag pricing inconsistent with fundamentals |
 
 ## Caveats
 
