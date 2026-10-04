@@ -14,6 +14,7 @@ data/raw/*.zip
 data/raw/*.xlsx
 data/raw/*.xls
 data/raw/*.csv
+data/raw/*.json
 data/raw/_inspect/
 
 # Generated outputs of the toolkit runners: regenerable, never tracked

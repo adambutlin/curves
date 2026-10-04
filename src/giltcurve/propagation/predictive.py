@@ -117,7 +117,13 @@ def _valid(r: np.ndarray, *blocks) -> np.ndarray:
 # ---------------------------------------------------------------- Test A
 def reduced_form_test(r, own, U, Z, outcome: str, h: int) -> dict:
     """Do the other day-t innovations predict r given the own move and Z?"""
-    others = U[:, _OTHER_INNOVATIONS[outcome]]
+    return {"outcome": outcome, "h": h,
+            **reduced_form_test_generic(r, own, U[:, _OTHER_INNOVATIONS[outcome]], Z, h)}
+
+
+def reduced_form_test_generic(r, own, others, Z, h: int) -> dict:
+    """Test A for any system: ``others`` are the innovations that, with the own move,
+    span the full innovation vector."""
     m = _valid(r, own, others, Z)
     X0 = _stack(own[m], Z[m])
     X1 = _stack(own[m], Z[m], others[m])
@@ -126,7 +132,7 @@ def reduced_form_test(r, own, U, Z, outcome: str, h: int) -> dict:
     R = np.zeros((q, X1.shape[1]))
     R[:, -q:] = np.eye(q)
     W, p = wald(beta, V, R)
-    return {"outcome": outcome, "h": h, "n": int(m.sum()), "wald": W, "p": p,
+    return {"n": int(m.sum()), "wald": W, "p": p,
             "own_coef": float(beta[1]), "own_se": float(np.sqrt(V[1, 1])),
             "r2_restricted": r2_only(r[m], X0), "r2_full": r2_1,
             "incr_r2": r2_1 - r2_only(r[m], X0)}

@@ -152,16 +152,20 @@ def shocks_by_draw(panel: pd.DataFrame, ident, p: int = LAGS) -> list[np.ndarray
     return [np.linalg.solve(ident.B[j], (Yd - Xd @ ident.A[j]).T).T for j in range(len(ident.B))]
 
 
-def origin_variance_shares(ident) -> dict:
-    """Median share of each variable's daily innovation variance by shock origin."""
+def origin_variance_shares(ident, stat=np.mean) -> dict:
+    """Share of each variable's daily innovation variance by shock origin.
+
+    This is the one-step-ahead forecast-error variance decomposition. Brandt et al.
+    report it averaged over accepted draws, hence the default ``stat=np.mean``.
+    """
     sh = ident.variance_shares()                                  # (J, n, K)
     out = {}
     for i, v in enumerate(VARIABLES):
-        out[v] = {o: float(np.median(sh[:, i, idx].sum(axis=1))) for o, idx in ORIGIN.items()}
+        out[v] = {o: float(stat(sh[:, i, idx].sum(axis=1))) for o, idx in ORIGIN.items()}
     # The US 10-year is the euro-area rate minus the spread.
-    var_us = np.einsum("jk,jk->j", ident.B[:, 0] - ident.B[:, 4], ident.B[:, 0] - ident.B[:, 4])
     b_us = ident.B[:, 0] - ident.B[:, 4]
-    out["d_us10"] = {o: float(np.median((b_us[:, idx] ** 2).sum(axis=1) / var_us))
+    var_us = (b_us ** 2).sum(axis=1)
+    out["d_us10"] = {o: float(stat((b_us[:, idx] ** 2).sum(axis=1) / var_us))
                      for o, idx in ORIGIN.items()}
     return out
 
