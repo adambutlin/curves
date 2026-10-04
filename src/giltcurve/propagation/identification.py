@@ -51,16 +51,20 @@ def haar_rotations(n: int, size: int, rng: np.random.Generator) -> np.ndarray:
     return q * d[:, None, :]
 
 
-def match_columns(B: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """Match columns of candidate impact matrices (R, n, n) to the four shocks.
+def match_columns(B: np.ndarray, restriction=None) -> tuple[np.ndarray, np.ndarray]:
+    """Match columns of candidate impact matrices (R, n, n) to the shocks.
 
-    Returns ``(ok_index, B_matched)``: the candidates whose columns can be
-    assigned one-to-one to the shocks (with sign flips), and those matrices
-    with columns reordered as ``SHOCKS`` and signed as positive shocks.
+    ``restriction(cols)`` returns, for impact columns of shape (..., n), a boolean
+    array (..., K) saying which shocks each column satisfies; it defaults to the
+    Cieslak-Pang scheme. The restriction sets must be mutually exclusive up to
+    sign, so that the matching is unique. Returns ``(ok_index, B_matched)``: the
+    candidates whose columns can be assigned one-to-one to the shocks (with sign
+    flips), and those matrices with columns in shock order, signed as positive shocks.
     """
+    restriction = restriction_matrix if restriction is None else restriction
     cols = np.swapaxes(B, 1, 2)                      # (R, column j, variable)
-    pos = restriction_matrix(cols)                   # (R, j, shock k)
-    neg = restriction_matrix(-cols)
+    pos = restriction(cols)                          # (R, j, shock k)
+    neg = restriction(-cols)
     sat = pos | neg
     ok = (sat.sum(axis=2) == 1).all(axis=1) & (sat.sum(axis=1) == 1).all(axis=1)
     idx = np.flatnonzero(ok)
@@ -107,7 +111,7 @@ class IdentifiedSet:
 def sample_identified_set(draw: Callable[[int, np.random.Generator], tuple],
                           n_accept: int, rng: np.random.Generator, *,
                           reduced_form_batch: int = 200, rotations_per_draw: int = 250,
-                          max_candidates: int = 50_000_000) -> IdentifiedSet:
+                          max_candidates: int = 50_000_000, restriction=None) -> IdentifiedSet:
     """Joint accept-reject over reduced-form draws and Haar rotations.
 
     ``draw(m, rng)`` returns ``(A, Sigma)`` with shapes (m, k, n) and (m, n, n);
@@ -127,7 +131,7 @@ def sample_identified_set(draw: Callable[[int, np.random.Generator], tuple],
         L = np.linalg.cholesky(Sig)
         Q = haar_rotations(n, m * rotations_per_draw, rng).reshape(m, rotations_per_draw, n, n)
         cand = (L[:, None] @ Q).reshape(-1, n, n)
-        idx, Bm = match_columns(cand)
+        idx, Bm = match_columns(cand, restriction)
         src = idx // rotations_per_draw
         Bs.append(Bm)
         Ss.append(Sig[src])
