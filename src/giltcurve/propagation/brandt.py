@@ -170,6 +170,27 @@ def origin_variance_shares(ident, stat=np.mean) -> dict:
     return out
 
 
+def fevd_by_origin(ident, horizon: int, stat=np.mean) -> dict:
+    """Forecast-error variance shares by shock origin at ``horizon`` days (1 = impact).
+
+    Beyond one day the shares include the next-day catch-up of euro-area prices to US
+    news that arrived after the euro-area close, which the one-step shares miss.
+    """
+    from giltcurve.propagation.bvar import impulse_responses
+    n = len(VARIABLES)
+    sel = {"d_ea10": np.eye(n)[0], "r_eq_ea": np.eye(n)[1], "r_eq_us": np.eye(n)[2],
+           "d_fx": np.eye(n)[3], "d_spread": np.eye(n)[4], "d_us10": np.eye(n)[0] - np.eye(n)[4]}
+    shares = {v: {o: [] for o in ORIGIN} for v in sel}
+    for j in range(len(ident.B)):
+        Psi = impulse_responses(ident.A[j], LAGS, horizon - 1)
+        Theta = np.einsum("sij,jk->sik", Psi, ident.B[j])          # (h, n, K)
+        for v, w in sel.items():
+            contrib = (np.einsum("i,sik->sk", w, Theta) ** 2).sum(axis=0)   # (K,)
+            for o, idx in ORIGIN.items():
+                shares[v][o].append(contrib[idx].sum() / contrib.sum())
+    return {v: {o: float(stat(x)) for o, x in d.items()} for v, d in shares.items()}
+
+
 # ---------------------------------------------------------------- propagation
 def outcome_levels(panel: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame({"ea10": panel["ea10"] * 100.0, "us10": panel["us10"] * 100.0,
@@ -181,9 +202,12 @@ def own_moves(panel: pd.DataFrame) -> pd.DataFrame:
                          "spread": panel["d_spread"]}, index=panel.index)
 
 
-def forward_changes(panel: pd.DataFrame, horizons=HORIZONS) -> dict:
+def forward_changes(panel: pd.DataFrame, horizons=HORIZONS, skip: int = 0) -> dict:
+    """``{(outcome, h): x_{t+h} - x_{t+skip}}``. ``skip=1`` starts the window at the next
+    close, after the euro-area market has caught up with US news from the afternoon of
+    day t (euro-area prices close about five and a half hours before US prices)."""
     lv = outcome_levels(panel)
-    return {(o, h): lv[o].shift(-h) - lv[o] for o in OUTCOMES for h in horizons}
+    return {(o, h): lv[o].shift(-h) - lv[o].shift(-skip) for o in OUTCOMES for h in horizons}
 
 
 def controls(panel: pd.DataFrame) -> pd.DataFrame:
@@ -248,7 +272,7 @@ def origin_split_test(r, own, c_foreign, c_global, Z, h: int, *, with_se: bool =
 # ---------------------------------------------------------------- real time
 def pseudo_oos(panel: pd.DataFrame, *, years=range(2004, 2026), p: int = LAGS, lam: float = 0.2,
                n_draws: int = 200, horizons=HORIZONS, outcomes=OUTCOMES,
-               seed: int = 20261008) -> pd.DataFrame:
+               seed: int = 20261008, skip: int = 0) -> pd.DataFrame:
     """Expanding-window real-time forecasts, as in the MVP but for the cross-Atlantic model.
 
     M0 no change; M1 own move; M2 plus curve state; M3 plus the foreign and global parts
@@ -261,7 +285,7 @@ def pseudo_oos(panel: pd.DataFrame, *, years=range(2004, 2026), p: int = LAGS, l
     dates = panel.index[p:]
     own = own_moves(panel).iloc[p:]
     Z = controls(panel).iloc[p:].to_numpy()
-    fwd = {k: v.iloc[p:].to_numpy() for k, v in forward_changes(panel, horizons).items()}
+    fwd = {k: v.iloc[p:].to_numpy() for k, v in forward_changes(panel, horizons, skip).items()}
     pos = np.arange(len(dates))
     rows = []
     for year in years:

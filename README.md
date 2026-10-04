@@ -23,15 +23,25 @@ are identified once, within stock-bond regimes, or with large news treated separ
 The continuation that exists sits in ordinary-sized news; large, salient policy news is
 priced at once.
 
+**Cross-Atlantic model and 2026.** A free-data replication of Brandt et al.'s (2021)
+euro-area/US model reproduces their equity spillovers and, once a closing-time artefact
+is accounted for, close to their rate spillovers. Run frozen at end-2025 through the
+2026 selloff, both models put US news at the centre: US monetary and macro news explain
+about 60% of the rise in both the 10-year Treasury and the 10-year Bund from 27 February
+to 19 August, and the 2-year's rise was a repricing of US policy-rate expectations.
+
 - Overview and reading order: [docs/research/structural-propagation/README.md](docs/research/structural-propagation/README.md)
-- MVP results: [03-mvp-results.md](docs/research/structural-propagation/03-mvp-results.md); regime-dependent identification: [05-phase2-results.md](docs/research/structural-propagation/05-phase2-results.md); size of news: [07-phase3-results.md](docs/research/structural-propagation/07-phase3-results.md)
+- MVP results: [03-mvp-results.md](docs/research/structural-propagation/03-mvp-results.md); regime-dependent identification: [05-phase2-results.md](docs/research/structural-propagation/05-phase2-results.md); size of news: [07-phase3-results.md](docs/research/structural-propagation/07-phase3-results.md); cross-Atlantic model: [09-brandt-results.md](docs/research/structural-propagation/09-brandt-results.md); 2026: [10-2026-application.md](docs/research/structural-propagation/10-2026-application.md)
 - Figures and tables: [reports/structural_propagation/](reports/structural_propagation/)
 
 ```bash
 python scripts/run_structural_propagation.py      # MVP: estimation, tests, real-time evaluation (~2 min)
 python scripts/run_phase2_regimes.py              # regime-specific identification (~1.5 min)
 python scripts/run_phase3_size.py                 # size-dependent propagation (~2 min)
-python scripts/plot_structural_propagation.py     # figures
+python scripts/plot_structural_propagation.py     # figures 1-6
+python scripts/run_brandt.py                      # cross-Atlantic model (Brandt et al.)
+python scripts/run_2026_application.py --brandt-sha <frozen model hash>   # both models on 2026
+python scripts/plot_brandt_2026.py                # figures 7-11
 ```
 
 ---

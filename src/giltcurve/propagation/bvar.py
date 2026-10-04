@@ -107,3 +107,35 @@ def fit_bvar(Y: np.ndarray, p: int = 1, lam: float = 0.2) -> BVARPosterior:
     S = E.T @ E
     dof = Ys.shape[0] - Xs.shape[1] + 2
     return BVARPosterior(p=p, A_hat=A_hat, XtX_inv=XtX_inv, S=S, dof=float(dof), Y=Yt, X=Xt)
+
+
+def impulse_responses(A: np.ndarray, p: int, horizon: int) -> np.ndarray:
+    """Reduced-form moving-average weights Psi_0..Psi_horizon, shape (horizon+1, n, n).
+
+    With Y_t = c + sum_l Phi_l Y_{t-l} + u_t and the design's coefficient layout
+    (``A`` is (1 + n p, n), lag-l block in rows 1+(l-1)n .. l n), Phi_l = A_l' and
+    Psi_0 = I, Psi_s = sum_{l=1}^{min(s,p)} Phi_l Psi_{s-l}. Structural responses to
+    shock k are Psi_s B[:, k].
+    """
+    n = A.shape[1]
+    Phi = [A[1 + (l - 1) * n: 1 + l * n].T for l in range(1, p + 1)]
+    Psi = np.zeros((horizon + 1, n, n))
+    Psi[0] = np.eye(n)
+    for s in range(1, horizon + 1):
+        for l in range(1, min(s, p) + 1):
+            Psi[s] += Phi[l - 1] @ Psi[s - l]
+    return Psi
+
+
+def historical_contributions(eps: np.ndarray, Theta: np.ndarray) -> np.ndarray:
+    """Contribution of each shock to each variable, day by day, through the dynamics.
+
+    ``eps`` (T, K) are structural shocks and ``Theta`` (S+1, n, K) the structural
+    responses Psi_s B. Returns (T, n, K): sum over s <= S of Theta_s[:, k] eps_{t-s, k}.
+    """
+    T, K = eps.shape
+    S = Theta.shape[0] - 1
+    out = np.zeros((T, Theta.shape[1], K))
+    for s in range(S + 1):
+        out[s:] += eps[: T - s, None, :] * Theta[s][None, :, :]
+    return out

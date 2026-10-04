@@ -100,4 +100,6 @@ neither model is re-estimated on 2026 data.
 
 | Date | Change | Reason |
 |---|---|---|
-| (none yet) | | |
+| 4 Oct 2026 | Added, beside the pre-registered close-to-close tests: propagation tests and real-time evaluation on changes that start at the next close; variance shares at two and five days; re-estimation on two-day and weekly changes; lead-lag regressions | The first estimates showed that euro-area prices, recorded about five and a half hours before US prices, catch up the next day with US afternoon news (next-day Bund on today's Treasury: 0.40, t = 36). Close-to-close results are reported but are not economically interpretable |
+| 4 Oct 2026 | The 2026 decompositions run through each VAR's dynamics (20-day moving-average weights) rather than adding up same-day impacts only | Credits the Bund's next-day catch-up to the US shock that caused it; the same-day version would assign it to "other" |
+| 4 Oct 2026 | US model's 2026 data end on 31 August | The CRSP-based equity series is published monthly with a lag |

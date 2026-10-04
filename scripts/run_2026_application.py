@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 
 from giltcurve.propagation import brandt
-from giltcurve.propagation.bvar import design
+from giltcurve.propagation.bvar import design, historical_contributions, impulse_responses
 from giltcurve.propagation.data import load_us_panel
 from giltcurve.propagation.identification import IdentifiedSet, SHOCKS, VARIABLES
 from giltcurve.propagation.oos import clark_west
@@ -51,24 +51,42 @@ def shocks(panel, variables, model, p):
     return panel.index[p:], eps, U_mean
 
 
-def decompose(dates, eps, B, impact_fn, own, outcomes, shock_names, mt):
-    """Daily contributions by shock (median-target draw) and window totals with bands."""
+def decompose(dates, eps, model, p, weights, own, shock_names, mt, horizon=20):
+    """Historical decomposition of 2026 moves by shock, through the VAR's dynamics.
+
+    Each day's contribution of shock k is sum_{s<=horizon} w' Psi_s B[:, k] eps_{t-s,k},
+    where ``w`` picks the outcome from the VAR's variables. Working through the dynamics
+    matters for the cross-Atlantic model: euro-area prices close before US prices, so
+    part of a US shock reaches the Bund only the next day, through the VAR's lags.
+    "other" is what the shocks of the previous ``horizon`` days do not explain
+    (intercepts and older shocks).
+    """
+    first = int(np.searchsorted(dates, START_2026))
+    i0 = max(first - horizon, 0)
+    sub_dates = dates[first:]
     daily, windows = {}, []
-    for o in outcomes:
-        b = impact_fn(B, o)                                        # (J, K)
-        contrib = np.stack([eps[j] * b[j] for j in range(len(eps))])  # (J, T, K)
-        daily[o] = pd.DataFrame(contrib[mt], index=dates, columns=shock_names)
-        daily[o]["actual"] = own[o].reindex(dates).to_numpy()
-        daily[o]["predictable"] = daily[o]["actual"] - daily[o][list(shock_names)].sum(axis=1)
+    totals = {o: [] for o in weights}
+    for j in range(len(eps)):
+        Psi = impulse_responses(model["A"][j], p, horizon)
+        Theta = np.einsum("sij,jk->sik", Psi, model["B"][j])
+        hc = historical_contributions(eps[j][i0:], Theta)[first - i0:]     # (T26, n, K)
+        for o, w in weights.items():
+            totals[o].append(np.einsum("i,tik->tk", w, hc))               # (T26, K)
+    for o in weights:
+        contrib = np.stack(totals[o])                                     # (J, T26, K)
+        df = pd.DataFrame(contrib[mt], index=sub_dates, columns=shock_names)
+        df["actual"] = own[o].reindex(sub_dates).to_numpy()
+        df["other"] = df["actual"] - df[list(shock_names)].sum(axis=1)
+        daily[o] = df
         for label, (a, z) in WINDOWS.items():
-            sel = (dates > pd.Timestamp(a)) & ((dates <= pd.Timestamp(z)) if z else True)
+            sel = (sub_dates > pd.Timestamp(a)) & ((sub_dates <= pd.Timestamp(z)) if z else True)
             if not sel.any():
                 continue
-            tot = contrib[:, sel, :].sum(axis=1)                  # (J, K)
-            row = {"outcome": o, "window": label, "first_day": str(dates[sel][0].date()),
-                   "last_day": str(dates[sel][-1].date()),
-                   "actual_bp": float(daily[o]["actual"][sel].sum()),
-                   "predictable_bp": float(daily[o]["predictable"][sel].sum())}
+            tot = contrib[:, sel, :].sum(axis=1)                          # (J, K)
+            row = {"outcome": o, "window": label, "first_day": str(sub_dates[sel][0].date()),
+                   "last_day": str(sub_dates[sel][-1].date()),
+                   "actual_bp": float(df["actual"][sel].sum()),
+                   "other_bp": float(df["other"][sel].sum())}
             for k, s in enumerate(shock_names):
                 row[f"{s}_bp"] = float(tot[mt, k])
                 row[f"{s}_p05"] = float(np.quantile(tot[:, k], 0.05))
@@ -135,8 +153,8 @@ def main(argv=None) -> int:
     mt_us = IdentifiedSet(B=us_model["B"], Sigma=us_model["Sigma"], A=us_model["A"],
                           candidates=len(us_model["B"]), accepted=len(us_model["B"])).median_target()
     own_us = own_moves(us)
-    daily_us, win_us = decompose(d_us, eps_us, us_model["B"], impact_on, own_us,
-                                 ("y10", "y2", "slope"), SHOCKS, mt_us)
+    w_us = {"y10": np.eye(4)[2], "y2": np.eye(4)[0], "slope": np.eye(4)[2] - np.eye(4)[0]}
+    daily_us, win_us = decompose(d_us, eps_us, us_model, 1, w_us, own_us, SHOCKS, mt_us)
     win_us.insert(0, "model", "US (Cieslak-Pang)")
     fc_us = forecast_2026(
         d_us, eps_us, us_model["B"], U_us, own_us, curve_controls(us).iloc[1:].to_numpy(),
@@ -154,8 +172,8 @@ def main(argv=None) -> int:
     mt_br = IdentifiedSet(B=br_model["B"], Sigma=br_model["Sigma"], A=br_model["A"],
                           candidates=len(br_model["B"]), accepted=len(br_model["B"])).median_target()
     own_br = brandt.own_moves(br)
-    daily_br, win_br = decompose(d_br, eps_br, br_model["B"], brandt.impact_on, own_br,
-                                 brandt.OUTCOMES, brandt.SHOCKS, mt_br)
+    w_br = {"ea10": np.eye(5)[0], "us10": np.eye(5)[0] - np.eye(5)[4], "spread": np.eye(5)[4]}
+    daily_br, win_br = decompose(d_br, eps_br, br_model, p, w_br, own_br, brandt.SHOCKS, mt_br)
     win_br.insert(0, "model", "Cross-Atlantic (Brandt et al.)")
     fc_br = forecast_2026(
         d_br, eps_br, br_model["B"], U_br, own_br, brandt.controls(br).iloc[p:].to_numpy(),
@@ -163,6 +181,15 @@ def main(argv=None) -> int:
         brandt.OUTCOMES, brandt.impact_on, brandt.origin_contributions,
         brandt.other_innovations, brandt.HORIZONS, args.n_forecast_draws)
     fc_br.insert(0, "model", "Cross-Atlantic (Brandt et al.)")
+    # The euro-area close precedes the US close, so next-day Bund moves partly catch up with
+    # US afternoon news; the economically interpretable test starts at the next close.
+    fc_br_skip = forecast_2026(
+        d_br, eps_br, br_model["B"], U_br, own_br, brandt.controls(br).iloc[p:].to_numpy(),
+        {k: v.iloc[p:].to_numpy() for k, v in brandt.forward_changes(br, (2, 5, 10, 20), skip=1).items()},
+        brandt.OUTCOMES, brandt.impact_on, brandt.origin_contributions,
+        brandt.other_innovations, (2, 5, 10, 20), args.n_forecast_draws)
+    fc_br_skip.insert(0, "model", "Cross-Atlantic, from the next close")
+    fc_br = pd.concat([fc_br, fc_br_skip])
     summary["brandt_panel_last_day"] = str(br.index.max().date())
 
     pd.concat([win_us, win_br]).to_csv(out / "decomposition_windows.csv", index=False)
@@ -174,7 +201,7 @@ def main(argv=None) -> int:
     (out / "summary.json").write_text(json.dumps(summary, indent=2))
     pd.set_option("display.width", 250)
     print(json.dumps(summary, indent=2))
-    cols = ["model", "outcome", "window", "actual_bp", "predictable_bp"]
+    cols = ["model", "outcome", "window", "actual_bp", "other_bp"]
     print(pd.concat([win_us, win_br])[cols + [c for c in pd.concat([win_us, win_br]).columns
                                               if c.endswith("_bp") and c not in cols]].round(1).to_string())
     print(pd.concat([fc_us, fc_br]).round(4).to_string())

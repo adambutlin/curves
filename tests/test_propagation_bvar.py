@@ -54,3 +54,21 @@ def test_draws_are_centred_on_the_posterior_and_covariances_are_valid():
     resid = post.residuals()
     assert resid.shape == post.Y.shape
     assert resid.mean(0) == pytest.approx(np.zeros(3), abs=0.05)
+
+
+def test_impulse_responses_of_a_var1_are_matrix_powers_and_history_adds_up():
+    from giltcurve.propagation.bvar import historical_contributions, impulse_responses
+    A = np.vstack([C, A1.T])                              # design layout: [const; lag-1 block]
+    Psi = impulse_responses(A, 1, 4)
+    np.testing.assert_allclose(Psi[3], np.linalg.matrix_power(A1, 3), atol=1e-12)
+    # With shocks only from day 0 on and a long enough horizon, contributions sum to
+    # the VAR's demeaned path.
+    rng = np.random.default_rng(9)
+    B = np.linalg.cholesky(SIG)
+    eps = rng.standard_normal((60, 3))
+    y = np.zeros((60, 3))
+    for t in range(60):
+        y[t] = (A1 @ y[t - 1] if t else 0) + B @ eps[t]
+    Theta = np.einsum("sij,jk->sik", impulse_responses(A, 1, 59), B)
+    hc = historical_contributions(eps, Theta)
+    np.testing.assert_allclose(hc.sum(axis=2), y, atol=1e-10)
