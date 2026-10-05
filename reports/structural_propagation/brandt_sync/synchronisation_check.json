@@ -1,0 +1,50 @@
+{
+  "free data (Bundesbank zero, cash equity)": {
+    "sample": [
+      "2007-01-03",
+      "2025-12-30"
+    ],
+    "next_day_ea10_on_us10": {
+      "coef": 0.39168920765714876,
+      "t": 28.533222322269026
+    },
+    "next_day_eq_ea_on_eq_us": {
+      "coef": 0.18289974945325213,
+      "t": 5.404050516193535
+    },
+    "same_day_corr_rates": 0.2717969030432789,
+    "same_day_corr_equity": 0.6095843783379351
+  },
+  "synchronised: OIS": {
+    "sample": [
+      "2007-01-03",
+      "2025-12-30"
+    ],
+    "next_day_ea10_on_us10": {
+      "coef": 0.07944000023729951,
+      "t": 5.633107094109378
+    },
+    "next_day_eq_ea_on_eq_us": {
+      "coef": -0.15472055618517808,
+      "t": -4.461481253839589
+    },
+    "same_day_corr_rates": 0.6129777924440016,
+    "same_day_corr_equity": 0.8575938046909766
+  },
+  "synchronised: Bund future": {
+    "sample": [
+      "2007-01-03",
+      "2025-12-30"
+    ],
+    "next_day_ea10_on_us10": {
+      "coef": 0.0006521829124220848,
+      "t": 0.046253395014518035
+    },
+    "next_day_eq_ea_on_eq_us": {
+      "coef": -0.15550987432336258,
+      "t": -4.494740839247367
+    },
+    "same_day_corr_rates": 0.7587931055946356,
+    "same_day_corr_equity": 0.8578507134913916
+  }
+}

@@ -1,5 +1,12 @@
 # The 2026 bond selloff through both frozen models
 
+> **Update (5 October 2026).** The cross-Atlantic numbers below come from the free-data
+> model, whose euro-area prices close before US prices. The synchronised model
+> ([12-brandt-synchronised-results.md](12-brandt-synchronised-results.md)) corrects the
+> euro-area part: the euro-area monetary contribution falls from +21bp to +3bp over the
+> selloff window, and US news accounts for essentially all of the euro-area 10-year rate's
+> rise in 2026. The US-model results are unaffected.
+
 *Both models frozen at end-2025 (US model: commit `3cf38c2`, SHA-256 `cafa5f25...e7b8`;
 cross-Atlantic model: commit `897dea3`, SHA-256 `2fd02b43...e345ae`), fingerprints
 checked before use; no parameter re-estimated on 2026 data. Protocol: pre-registration

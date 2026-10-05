@@ -169,7 +169,7 @@ def _cum_panel(ax, df, shocks, title, styles=None):
         df["actual"].cumsum().min(), min(e[0] for e in ends))
     ys = _spread_labels([e[0] for e in ends], span * 0.045)
     for (v, colour), yv in zip(ends, ys):
-        ax.text(days[-1] + pd.Timedelta(days=4), yv, f"{v:+.0f}", va="center", fontsize=8,
+        ax.text(days[-1] + pd.Timedelta(days=4), float(yv), f"{v:+.0f}", va="center", fontsize=8,
                 color=INK2)
     ax.plot(days, df["actual"].cumsum(), color=INK, lw=2.6, label="Actual change")
     ax.plot(days, df["other"].cumsum(), color=GREY, lw=1.4, ls=":", label="Other (intercepts, older shocks)")
@@ -239,6 +239,111 @@ def fig_2026_window(app: Path, out: Path):
             "much of the Treasury rise as premium shocks, a different slicing of the same moves. Bands are wide.")
 
 
+def fig_synchronisation(rep: Path, out: Path):
+    """What recording prices at the New York close changes."""
+    chk = json.loads((rep / "brandt_sync" / "synchronisation_check.json").read_text())
+    free = json.loads((rep / "brandt" / "summary.json").read_text())["origin_shares_2007_2025"]
+    sync = json.loads((rep / "brandt_sync" / "summary.json").read_text())["origin_shares_full_sample"]
+    bfut = json.loads((rep / "brandt_sync_bf" / "summary.json").read_text())["origin_shares_full_sample"]
+    r2 = [float(pd.read_csv(rep / d / "test_a.csv").query("outcome == 'ea10' and h == 1")["incr_r2"].iloc[0])
+          for d in ("brandt", "brandt_sync", "brandt_sync_bf")]
+    labels = ["Free data\n(European closes)", "LSEG OIS\n(near NY close)", "LSEG Bund future\n(NY close)"]
+    shades = ["#9ec5f4", "#5598e7", "#1c5cab"]
+    fig, axes = plt.subplots(1, 3, figsize=(12, 4.2))
+    ax = axes[0]
+    keys = list(chk)
+    vals = [chk[k]["next_day_ea10_on_us10"]["coef"] for k in keys]
+    ax.bar(range(3), vals, color=shades, width=0.6, zorder=2)
+    for i, v in enumerate(vals):
+        ax.text(i, v + 0.012, f"{v:.2f}", ha="center", fontsize=9)
+    ax.set_xticks(range(3))
+    ax.set_xticklabels(labels, fontsize=8)
+    ax.set_ylim(0, max(vals) * 1.2)
+    ax.set_ylabel("bp of next-day euro-area rate move\nper bp of today's Treasury move")
+    ax.set_title("Overnight catch-up", loc="left")
+    ax.grid(axis="x", visible=False)
+    ax = axes[1]
+    items = [("US shocks in\neuro-area rate", "d_ea10", "us", 0.40), ("US shocks in\neuro equity", "r_eq_ea", "us", 0.40),
+             ("Euro-area shocks\nin US equity", "r_eq_us", "ea", 0.30)]
+    x = np.arange(3)
+    for i, d in enumerate((free, sync, bfut)):
+        ax.bar(x + (i - 1) * 0.26, [d[v][o] * 100 for _, v, o, _ in items], width=0.24, color=shades[i], zorder=2)
+    for k, (_, _, _, tgt) in enumerate(items):
+        ax.plot([k - 0.42, k + 0.42], [tgt * 100] * 2, color=INK, lw=1.4, ls="--", zorder=3)
+    ax.set_xticks(x)
+    ax.set_xticklabels([i[0] for i in items], fontsize=8)
+    ax.set_ylim(0, 50)
+    ax.set_ylabel("Share of daily variance, %")
+    ax.set_title("Spillovers", loc="left")
+    handles = [plt.Rectangle((0, 0), 1, 1, color=c) for c in shades]
+    handles.append(plt.Line2D([], [], color=INK, lw=1.4, ls="--"))
+    fig.legend(handles, ["Free data (European closes)", "LSEG OIS (near NY close)",
+                         "LSEG Bund future (NY close)", "Brandt et al. (2021)"],
+               loc="upper left", ncol=4, fontsize=8.5, bbox_to_anchor=(0.01, 0.93))
+    ax.grid(axis="x", visible=False)
+    ax = axes[2]
+    ax.bar(range(3), np.array(r2) * 100, color=shades, width=0.6, zorder=2)
+    for i, v in enumerate(r2):
+        ax.text(i, v * 100 + 0.5, f"{v * 100:.1f}%", ha="center", fontsize=9)
+    ax.set_xticks(range(3))
+    ax.set_xticklabels(labels, fontsize=8)
+    ax.set_ylim(0, max(r2) * 100 * 1.2)
+    ax.set_ylabel("Extra R² for next-day euro-area rate, %")
+    ax.set_title("Apparent next-day predictability", loc="left")
+    ax.grid(axis="x", visible=False)
+    _finish(fig, out, "fig12_synchronisation.png",
+            "Recording euro-area prices at the New York close (2007-2025)",
+            "With prices synchronised the overnight catch-up disappears, the US share of euro-area rate "
+            "variance rises to 35% (OIS) and 40% (Bund future) against the published 40%, and the "
+            "'predictability' of next-day euro-area moves shrinks from 28% of R-squared to 0.5%.")
+
+
+def fig_2026_synchronised(app: Path, out: Path):
+    priv = app / "lseg_private"
+    if not (priv / "daily_brandt_sync_ea10.csv").exists():
+        return
+    ea = pd.read_csv(priv / "daily_brandt_sync_ea10.csv", index_col=0, parse_dates=True)
+    us = pd.read_csv(priv / "daily_brandt_sync_us10.csv", index_col=0, parse_dates=True)
+    fig, axes = plt.subplots(1, 2, figsize=(12, 4.3), sharey=True)
+    _cum_panel(axes[0], ea, BR_SHOCKS, "Euro-area 10-year OIS")
+    _cum_panel(axes[1], us, BR_SHOCKS, "10-year Treasury")
+    axes[1].set_ylabel("")
+    axes[0].legend(loc="upper left", fontsize=7.5)
+    _finish(fig, out, "fig13_2026_synchronised.png",
+            "The 2026 selloff through the frozen synchronised cross-Atlantic model (LSEG prices at the NY close)",
+            "With synchronised prices the euro-area rise is imported: US macro and monetary news add 67bp to "
+            "the euro-area 10-year rate in 2026 while euro-area news subtracts 7bp; the Treasury's 118bp rise "
+            "is mostly US macro news.")
+
+
+def fig_2026_models(app: Path, out: Path):
+    w = pd.read_csv(app / "decomposition_windows.csv")
+    w = w[w["window"] == "27 Feb-19 Aug 2026"]
+    panels = [("US (Cieslak-Pang)", "y10", "Treasury 10y: US model", US_SHOCKS),
+              ("Cross-Atlantic, synchronised (LSEG)", "us10", "Treasury 10y: synchronised", BR_SHOCKS),
+              ("Cross-Atlantic (Brandt et al.)", "ea10", "Bund 10y: free data", BR_SHOCKS),
+              ("Cross-Atlantic, synchronised (LSEG)", "ea10", "Euro OIS 10y: synchronised", BR_SHOCKS)]
+    fig, axes = plt.subplots(1, 4, figsize=(13, 4.3), sharex=True)
+    for ax, (model, o, title, shocks) in zip(axes, panels):
+        r = w[(w["model"] == model) & (w["outcome"] == o)].iloc[0]
+        names = list(shocks)
+        y = np.arange(len(names))[::-1]
+        for yi, s in zip(y, names):
+            ax.barh(yi, r[f"{s}_bp"], color=shocks[s][1], height=0.6, zorder=2)
+            ax.plot([r[f"{s}_p05"], r[f"{s}_p95"]], [yi, yi], color=INK, lw=1.2, zorder=3)
+        ax.set_yticks(y)
+        ax.set_yticklabels([shocks[s][0] for s in names], fontsize=8)
+        ax.axvline(0, color=INK2, lw=1)
+        ax.set_title(f"{title}\nactual {r['actual_bp']:+.0f}bp", loc="left", fontsize=9)
+        ax.set_xlabel("Contribution, bp")
+        ax.grid(axis="y", visible=False)
+    _finish(fig, out, "fig14_2026_models.png",
+            "27 February to 19 August 2026 across the frozen models (bars: median-target model; lines: 90% of identified set)",
+            "Synchronising the data moves the euro-area story from domestic monetary news to imported US news; "
+            "on the Treasury side the models agree on US origin but split it differently between macro, monetary "
+            "and premium news, and the bands are wide.")
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--reports", default=str(ROOT / "reports" / "structural_propagation"))
@@ -249,6 +354,10 @@ def main(argv=None) -> int:
     fig_2026_us(rep / "application_2026", rep)
     fig_2026_crossatlantic(rep / "application_2026", rep)
     fig_2026_window(rep / "application_2026", rep)
+    if (rep / "brandt_sync" / "synchronisation_check.json").exists():
+        fig_synchronisation(rep, rep)
+        fig_2026_synchronised(rep / "application_2026", rep)
+        fig_2026_models(rep / "application_2026", rep)
     return 0
 
 

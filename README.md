@@ -23,15 +23,17 @@ are identified once, within stock-bond regimes, or with large news treated separ
 The continuation that exists sits in ordinary-sized news; large, salient policy news is
 priced at once.
 
-**Cross-Atlantic model and 2026.** A free-data replication of Brandt et al.'s (2021)
-euro-area/US model reproduces their equity spillovers and, once a closing-time artefact
-is accounted for, close to their rate spillovers. Run frozen at end-2025 through the
-2026 selloff, both models put US news at the centre: US monetary and macro news explain
-about 60% of the rise in both the 10-year Treasury and the 10-year Bund from 27 February
-to 19 August, and the 2-year's rise was a repricing of US policy-rate expectations.
+**Cross-Atlantic model and 2026.** Brandt et al.'s (2021) euro-area/US model is
+replicated closely once euro-area prices are recorded at the New York close (LSEG data):
+the US share of euro-area rate variance is 35-40% against their 40%, and equity and FX
+spillovers match. On free data, whose European prices close five and a half hours early,
+the same model finds spurious next-day "propagation"; synchronised, its answer matches
+the US model's. Run frozen through 2026, the models put US news at the centre: the
+euro-area 10-year rate's rise was imported almost entirely, and the 2-year Treasury's
+rise was a repricing of US policy-rate expectations.
 
 - Overview and reading order: [docs/research/structural-propagation/README.md](docs/research/structural-propagation/README.md)
-- MVP results: [03-mvp-results.md](docs/research/structural-propagation/03-mvp-results.md); regime-dependent identification: [05-phase2-results.md](docs/research/structural-propagation/05-phase2-results.md); size of news: [07-phase3-results.md](docs/research/structural-propagation/07-phase3-results.md); cross-Atlantic model: [09-brandt-results.md](docs/research/structural-propagation/09-brandt-results.md); 2026: [10-2026-application.md](docs/research/structural-propagation/10-2026-application.md)
+- MVP results: [03-mvp-results.md](docs/research/structural-propagation/03-mvp-results.md); regime-dependent identification: [05-phase2-results.md](docs/research/structural-propagation/05-phase2-results.md); size of news: [07-phase3-results.md](docs/research/structural-propagation/07-phase3-results.md); cross-Atlantic model: [09-brandt-results.md](docs/research/structural-propagation/09-brandt-results.md), synchronised: [12-brandt-synchronised-results.md](docs/research/structural-propagation/12-brandt-synchronised-results.md); 2026: [10-2026-application.md](docs/research/structural-propagation/10-2026-application.md)
 - Figures and tables: [reports/structural_propagation/](reports/structural_propagation/)
 
 ```bash
@@ -41,7 +43,8 @@ python scripts/run_phase3_size.py                 # size-dependent propagation (
 python scripts/plot_structural_propagation.py     # figures 1-6
 python scripts/run_brandt.py                      # cross-Atlantic model (Brandt et al.)
 python scripts/run_2026_application.py --brandt-sha <frozen model hash>   # both models on 2026
-python scripts/plot_brandt_2026.py                # figures 7-11
+python scripts/run_brandt.py --sync ois          # synchronised version (LSEG Workspace + LSEG_APP_KEY)
+python scripts/plot_brandt_2026.py                # figures 7-14
 ```
 
 ---
