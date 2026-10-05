@@ -139,6 +139,8 @@ def main(argv=None) -> int:
     ap.add_argument("--data-dir", default=str(ROOT / "data" / "raw"))
     ap.add_argument("--out-dir", default=str(REPORTS / "application_2026"))
     ap.add_argument("--brandt-sha", required=True, help="SHA-256 recorded when the model was frozen")
+    ap.add_argument("--brandt-sync-sha", default=None,
+                    help="SHA-256 of the frozen synchronised (LSEG) model; adds it to the application")
     ap.add_argument("--n-forecast-draws", type=int, default=200)
     args = ap.parse_args(argv)
     out = Path(args.out_dir)
@@ -192,8 +194,33 @@ def main(argv=None) -> int:
     fc_br = pd.concat([fc_br, fc_br_skip])
     summary["brandt_panel_last_day"] = str(br.index.max().date())
 
-    pd.concat([win_us, win_br]).to_csv(out / "decomposition_windows.csv", index=False)
-    pd.concat([fc_us, fc_br]).to_csv(out / "forecasts_2026.csv", index=False)
+    # ---- Synchronised cross-Atlantic model (LSEG prices at the New York close).
+    win_sy, fc_sy = pd.DataFrame(), pd.DataFrame()
+    if args.brandt_sync_sha:
+        sy_model = load_frozen(REPORTS / "brandt_sync" / "model_brandt_sync_end2025.npz",
+                               args.brandt_sync_sha)
+        sy = brandt.load_panel_sync(args.data_dir, end="2026-12-31", unseal_holdout=True)
+        d_sy, eps_sy, U_sy = shocks(sy, brandt.VARIABLES, sy_model, p)
+        mt_sy = IdentifiedSet(B=sy_model["B"], Sigma=sy_model["Sigma"], A=sy_model["A"],
+                              candidates=len(sy_model["B"]), accepted=len(sy_model["B"])).median_target()
+        own_sy = brandt.own_moves(sy)
+        daily_sy, win_sy = decompose(d_sy, eps_sy, sy_model, p, w_br, own_sy, brandt.SHOCKS, mt_sy)
+        win_sy.insert(0, "model", "Cross-Atlantic, synchronised (LSEG)")
+        fc_sy = forecast_2026(
+            d_sy, eps_sy, sy_model["B"], U_sy, own_sy, brandt.controls(sy).iloc[p:].to_numpy(),
+            {k: v.iloc[p:].to_numpy() for k, v in brandt.forward_changes(sy).items()},
+            brandt.OUTCOMES, brandt.impact_on, brandt.origin_contributions,
+            brandt.other_innovations, brandt.HORIZONS, args.n_forecast_draws)
+        fc_sy.insert(0, "model", "Cross-Atlantic, synchronised (LSEG)")
+        summary["sync_panel_last_day"] = str(sy.index.max().date())
+        # LSEG-derived daily series stay local (licensed data are not redistributed).
+        private = out / "lseg_private"
+        private.mkdir(exist_ok=True)
+        for o, df in daily_sy.items():
+            df[df.index >= START_2026].to_csv(private / f"daily_brandt_sync_{o}.csv")
+
+    pd.concat([win_us, win_br, win_sy]).to_csv(out / "decomposition_windows.csv", index=False)
+    pd.concat([fc_us, fc_br, fc_sy]).to_csv(out / "forecasts_2026.csv", index=False)
     for o, df in daily_us.items():
         df[df.index >= START_2026].to_csv(out / f"daily_us_{o}.csv")
     for o, df in daily_br.items():
@@ -202,9 +229,9 @@ def main(argv=None) -> int:
     pd.set_option("display.width", 250)
     print(json.dumps(summary, indent=2))
     cols = ["model", "outcome", "window", "actual_bp", "other_bp"]
-    print(pd.concat([win_us, win_br])[cols + [c for c in pd.concat([win_us, win_br]).columns
-                                              if c.endswith("_bp") and c not in cols]].round(1).to_string())
-    print(pd.concat([fc_us, fc_br]).round(4).to_string())
+    allw = pd.concat([win_us, win_br, win_sy])
+    print(allw[cols + [c for c in allw.columns if c.endswith("_bp") and c not in cols]].round(1).to_string())
+    print(pd.concat([fc_us, fc_br, fc_sy]).round(4).to_string())
     return 0
 
 

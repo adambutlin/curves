@@ -20,3 +20,6 @@ data/raw/_inspect/
 # Generated outputs of the toolkit runners: regenerable, never tracked
 data/processed/
 reports/figures/
+
+# LSEG-derived daily series: licensed data, kept local
+reports/structural_propagation/**/lseg_private/

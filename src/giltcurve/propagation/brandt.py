@@ -322,3 +322,50 @@ def pseudo_oos(panel: pd.DataFrame, *, years=range(2004, 2026), p: int = LAGS, l
                     "date": dates[te], "year": year, "outcome": o, "h": h, "actual": r[te],
                     "m0": 0.0, "m1": fp(X1), "m2": fp(X2), "m3": f3, "m4": fp(X4)}))
     return pd.concat(rows, ignore_index=True)
+
+
+# ---------------------------------------------------------------- synchronised data (LSEG)
+SYNC_START = pd.Timestamp("2007-01-02")
+OIS_SWITCH = pd.Timestamp("2020-01-02")
+
+
+def spliced_ois(eonia_mid: pd.Series, estr_mid: pd.Series, switch=OIS_SWITCH) -> pd.Series:
+    """10-year OIS level: EONIA before ``switch``, ESTR after, joined without a jump."""
+    eon = eonia_mid.dropna()
+    est = estr_mid.dropna()
+    gap = eon[eon.index < switch].iloc[-1] - est[est.index < switch].iloc[-1]
+    return pd.concat([eon[eon.index < switch], est[est.index >= switch] + gap]).rename("ois10")
+
+
+def load_panel_sync(data_dir="data/raw", *, start=SYNC_START,
+                    end=HOLDOUT_START - pd.Timedelta(days=1), unseal_holdout: bool = False,
+                    rate: str = "ois") -> pd.DataFrame:
+    """The cross-Atlantic panel on prices recorded at or near the New York close.
+
+    ``rate="ois"`` (default) uses the 10-year EONIA/ESTR OIS composites, Brandt et al.'s
+    own variable; ``rate="bund_future"`` uses the Euro Bund future's last trade, turned
+    into a yield change with the 10-year benchmark's modified duration (robustness).
+    Requires a Workspace session and ``LSEG_APP_KEY`` unless the series are cached.
+    """
+    from giltcurve.ingest.lseg import fetch_history, roll_adjusted_log_level
+    from giltcurve.ingest.market import load_yahoo_close
+    eon = fetch_history("EUREON10Y=", ["BID", "ASK"], data_dir)
+    est = fetch_history("EUREST10Y=", ["MID_PRICE"], data_dir)
+    fut_eq = fetch_history("STXEc1", ["TRDPRC_1"], data_dir)["TRDPRC_1"]
+    fut_eq2 = fetch_history("STXEc2", ["TRDPRC_1"], data_dir)["TRDPRC_1"]
+    fx = fetch_history("EUR=", ["MID_PRICE"], data_dir)["MID_PRICE"]
+    us10 = fetch_history("US10YT=RR", ["MID_YLD_1"], data_dir)["MID_YLD_1"]
+    eq_ea = roll_adjusted_log_level(fut_eq, fut_eq2, "fesx")
+    if rate == "ois":
+        ea10 = spliced_ois((eon["BID"] + eon["ASK"]) / 2.0, est["MID_PRICE"])
+    elif rate == "bund_future":
+        c1 = fetch_history("FGBLc1", ["TRDPRC_1"], data_dir)["TRDPRC_1"]
+        c2 = fetch_history("FGBLc2", ["TRDPRC_1"], data_dir)["TRDPRC_1"]
+        dur = fetch_history("DE10YT=RR", ["MOD_DURTN"], data_dir)["MOD_DURTN"]
+        logp = roll_adjusted_log_level(c1, c2, "fgbl")                 # percent
+        d_y = -logp.diff() / dur.reindex(logp.index).ffill().shift(1)  # percentage points
+        ea10 = d_y.fillna(0.0).cumsum().rename("bund_future_yield") + 4.0
+    else:
+        raise ValueError(rate)
+    return build_panel(ea10, us10, eq_ea, load_yahoo_close("^GSPC", data_dir), fx,
+                       start=start, end=end, unseal_holdout=unseal_holdout)

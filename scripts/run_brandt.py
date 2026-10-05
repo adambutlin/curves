@@ -133,13 +133,16 @@ def main(argv=None) -> int:
     ap.add_argument("--data-dir", default=str(ROOT / "data" / "raw"))
     ap.add_argument("--out-dir", default=str(ROOT / "reports" / "structural_propagation" / "brandt"))
     ap.add_argument("--quick", action="store_true")
+    ap.add_argument("--sync", choices=["ois", "bund_future"], default=None,
+                    help="use LSEG prices recorded at the New York close (pre-registration 11)")
     args = ap.parse_args(argv)
     out = Path(args.out_dir)
     out.mkdir(parents=True, exist_ok=True)
     n_draws, n_placebo, n_oos = (40, 40, 10) if args.quick else (1000, 1000, 200)
     rng = np.random.default_rng(SEED)
     t0 = time.time()
-    panel = brandt.load_panel(args.data_dir)                 # sealed: ends 2025-12-31
+    panel = (brandt.load_panel_sync(args.data_dir, rate=args.sync) if args.sync
+             else brandt.load_panel(args.data_dir))           # sealed: ends 2025-12-31
     summary = {"seed": SEED, "n_draws": n_draws, "sample": [str(panel.index.min().date()),
                str(panel.index.max().date()), len(panel)],
                "daily_corr": panel[list(brandt.VARIABLES)].corr().round(3).to_dict()}
@@ -147,11 +150,13 @@ def main(argv=None) -> int:
     post, ident = brandt.identify(panel, n_draws, rng)
     summary["acceptance_rate"] = ident.acceptance_rate
     eps = brandt.shocks_by_draw(panel, ident)
-    summary["origin_shares_1999_2025"] = brandt.origin_variance_shares(ident)
+    summary["origin_shares_1999_2025"] = brandt.origin_variance_shares(ident)   # full sample
+    summary["origin_shares_full_sample"] = summary["origin_shares_1999_2025"]
     _, ident23 = brandt.identify(panel.loc[:"2023-12-31"], max(n_draws // 2, 30), rng)
-    summary["origin_shares_1999_2023"] = brandt.origin_variance_shares(ident23)
+    summary["origin_shares_to_2023"] = brandt.origin_variance_shares(ident23)
     post07, ident07 = brandt.identify(panel.loc["2007-04-02":], max(n_draws // 2, 30), rng)
     summary["origin_shares_2007_2025"] = brandt.origin_variance_shares(ident07)
+    summary["fevd_2d"] = brandt.fevd_by_origin(ident, 2)
 
     ev = event_study(panel, ident, eps)
     ev.to_csv(out / "event_study.csv", index=False)
@@ -167,10 +172,13 @@ def main(argv=None) -> int:
     summarise_b(b).to_csv(out / "test_b.csv", index=False)
     c.to_csv(out / "test_c_origin.csv", index=False)
 
-    fc = brandt.pseudo_oos(panel, n_draws=n_oos)
-    summarise(fc, periods=PERIODS).to_csv(out / "oos_summary.csv", index=False)
+    years = range(max(2004, panel.index.min().year + 4), 2026)
+    fc = brandt.pseudo_oos(panel, n_draws=n_oos, years=years)
+    periods = PERIODS if years[0] == 2004 else {f"{years[0]}-2025": (years[0], 2025),
+                                                "2020-2025": (2020, 2025)}
+    summarise(fc, periods=periods).to_csv(out / "oos_summary.csv", index=False)
 
-    model_path = out / "model_brandt_end2025.npz"
+    model_path = out / ("model_brandt_sync_end2025.npz" if args.sync else "model_brandt_end2025.npz")
     np.savez_compressed(model_path, B=ident.B, Sigma=ident.Sigma, A=ident.A, A_hat=post.A_hat,
                         variables=np.array(brandt.VARIABLES), shocks=np.array(brandt.SHOCKS), p=P)
     summary["frozen_model_sha256"] = hashlib.sha256(model_path.read_bytes()).hexdigest()
