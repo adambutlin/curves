@@ -32,8 +32,15 @@ the US model's. Run frozen through 2026, the models put US news at the centre: t
 euro-area 10-year rate's rise was imported almost entirely, and the 2-year Treasury's
 rise was a repricing of US policy-rate expectations.
 
+**The 2026 gilt selloff.** A UK-US version of the model, with an added UK risk-premium
+shock (gilts selling off while sterling falls, the signature of a fiscal-credibility
+scare, which it correctly finds in the 2022 mini-budget), attributes 84-91bp of the
+10-year gilt's 95bp rise in 2026 to US news and global risk sentiment. The domestic part
+was Bank of England repricing that lifted sterling too; the risk premium contributed
+-7bp. The gilt-vigilante reading of 2026 is not supported.
+
 - Overview and reading order: [docs/research/structural-propagation/README.md](docs/research/structural-propagation/README.md)
-- MVP results: [03-mvp-results.md](docs/research/structural-propagation/03-mvp-results.md); regime-dependent identification: [05-phase2-results.md](docs/research/structural-propagation/05-phase2-results.md); size of news: [07-phase3-results.md](docs/research/structural-propagation/07-phase3-results.md); cross-Atlantic model: [09-brandt-results.md](docs/research/structural-propagation/09-brandt-results.md), synchronised: [12-brandt-synchronised-results.md](docs/research/structural-propagation/12-brandt-synchronised-results.md); 2026: [10-2026-application.md](docs/research/structural-propagation/10-2026-application.md)
+- MVP results: [03-mvp-results.md](docs/research/structural-propagation/03-mvp-results.md); regime-dependent identification: [05-phase2-results.md](docs/research/structural-propagation/05-phase2-results.md); size of news: [07-phase3-results.md](docs/research/structural-propagation/07-phase3-results.md); cross-Atlantic model: [09-brandt-results.md](docs/research/structural-propagation/09-brandt-results.md), synchronised: [12-brandt-synchronised-results.md](docs/research/structural-propagation/12-brandt-synchronised-results.md); UK: [14-ukus-results.md](docs/research/structural-propagation/14-ukus-results.md); 2026: [10-2026-application.md](docs/research/structural-propagation/10-2026-application.md)
 - Figures and tables: [reports/structural_propagation/](reports/structural_propagation/)
 
 ```bash
@@ -45,6 +52,8 @@ python scripts/run_brandt.py                      # cross-Atlantic model (Brandt
 python scripts/run_2026_application.py --brandt-sha <frozen model hash>   # both models on 2026
 python scripts/run_brandt.py --sync ois          # synchronised version (LSEG Workspace + LSEG_APP_KEY)
 python scripts/plot_brandt_2026.py                # figures 7-14
+python scripts/run_ukus.py                        # UK-US models (LSEG)
+python scripts/plot_ukus.py                       # figures 15-17
 ```
 
 ---

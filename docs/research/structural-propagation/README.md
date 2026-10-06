@@ -20,7 +20,10 @@ becomes close once euro-area prices are taken at the New York close (LSEG data).
 data the euro-area 10-year rate's rise was imported almost entirely (US news +67bp of
 +66bp in 2026 to date); the euro-area monetary contribution found on free data was the
 overnight catch-up misread as domestic news. The 2-year Treasury's rise was a repricing
-of the expected course of US policy rates.
+of the expected course of US policy rates. The 10-year gilt's 95bp rise was mostly
+imported (US news and global risk: 84-91bp); its domestic part was Bank of England
+repricing that lifted sterling too, and the UK risk-premium (fiscal-credibility) shock
+contributed -7bp.
 
 ## Reading order
 
@@ -38,6 +41,8 @@ of the expected course of US policy rates.
 | [10-2026-application.md](10-2026-application.md) | The 2026 selloff through both frozen models |
 | [11-brandt-synchronised-preregistration.md](11-brandt-synchronised-preregistration.md) | The cross-Atlantic model on LSEG prices recorded at the New York close |
 | [12-brandt-synchronised-results.md](12-brandt-synchronised-results.md) | Synchronised replication (close to the published spillovers), propagation, and the corrected 2026 decomposition |
+| [13-ukus-preregistration.md](13-ukus-preregistration.md) | The UK-US model, like-for-like and with a UK risk-premium shock |
+| [14-ukus-results.md](14-ukus-results.md) | The 2026 gilt selloff: imported, with a Bank of England component and no fiscal-credibility premium |
 
 ## Audit trail
 
@@ -52,11 +57,14 @@ commits intended to timestamp them could not be made in the session:
 | 06-phase3-size-preregistration.md | 2026-10-04 01:59 | `bc536fc2...3a759` |
 | 08-brandt-and-2026-preregistration.md (committed `26bd4d4` before estimation) | 2026-10-04 12:34 | `3abe52df...1b4133` |
 | 11-brandt-synchronised-preregistration.md | committed `a88caf7` before estimation | |
+| 13-ukus-preregistration.md | committed `d6cf275` before estimation | |
 
 Frozen end-2025 models used for the 2026 application: US model (commit `3cf38c2`)
 `cafa5f25144f8a4946f69cdf099c54be9709f8824b90f4c2aeb44d317765e7b8`; cross-Atlantic model
 (commit `897dea3`) `2fd02b43a05f487410059d01e799d5e547e30ec07d29401fec6f658a75511185`; synchronised
-cross-Atlantic model (commit `ee532fe`) `4b204619f83696e265a5b188c4ee31892662718fb7894f4b9783d2432e79d489`.
+cross-Atlantic model (commit `ee532fe`) `4b204619f83696e265a5b188c4ee31892662718fb7894f4b9783d2432e79d489`;
+UK-US models (commit `3e04261`) A `3282df3fac01ebf3338bb45fdfa57fa19cf22009fa46b55454b51c533ea0b4e2`,
+B `63d07fa9d37732bf6586de4a0836a3db76e1c54330903e4986ac9401776f6d75`.
 
 ## Reproduce
 
@@ -74,4 +82,7 @@ python scripts/run_2026_application.py --brandt-sha 2fd02b43a05f487410059d01e799
 python scripts/run_brandt.py --sync ois                     # synchronised model (LSEG; needs LSEG_APP_KEY)
 python scripts/run_2026_application.py --brandt-sha <...> --brandt-sync-sha 4b204619f83696e265a5b188c4ee31892662718fb7894f4b9783d2432e79d489
 python scripts/plot_brandt_2026.py                           # figures 7-14
+python scripts/run_ukus.py                                   # UK-US models A and B (LSEG)
+python scripts/run_ukus_2026.py --sha-a 3282df3fac01ebf3338bb45fdfa57fa19cf22009fa46b55454b51c533ea0b4e2 --sha-b 63d07fa9d37732bf6586de4a0836a3db76e1c54330903e4986ac9401776f6d75
+python scripts/plot_ukus.py                                  # figures 15-17
 ```
