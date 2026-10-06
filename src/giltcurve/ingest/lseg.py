@@ -56,13 +56,18 @@ def fetch_history(ric: str, fields: list[str], data_dir="data/raw", *, start="19
             return cached[fields]
     ld = _session(port)
     end = end or pd.Timestamp.today().strftime("%Y-%m-%d")
-    parts = []
+    parts, errors = [], []
     for a, b in (("1998-12-01", "2006-12-31"), ("2007-01-01", "2014-12-31"), ("2015-01-01", end)):
         if pd.Timestamp(b) < pd.Timestamp(start):
             continue
-        parts.append(ld.get_history(universe=ric, fields=fields, interval="daily",
-                                    start=max(a, start), end=b))
+        try:
+            parts.append(ld.get_history(universe=ric, fields=fields, interval="daily",
+                                        start=max(a, start), end=b))
+        except Exception as exc:          # a chunk before the series starts returns no data
+            errors.append(str(exc)[:200])
     ld.close_session()
+    if not parts:
+        raise RuntimeError(f"no LSEG data for {ric} {fields}: {errors}")
     df = pd.concat(parts).sort_index()
     df = df[~df.index.duplicated(keep="last")]
     df.columns = [str(c) for c in df.columns]
