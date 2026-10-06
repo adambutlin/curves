@@ -23,6 +23,7 @@ import pandas as pd
 from giltcurve.ingest._http import fetch
 
 HOLDOUT_START = pd.Timestamp("2026-01-01")
+TRAIN_END = pd.Timestamp("2025-12-31")   # last day of the estimation sample
 SAMPLE_START = pd.Timestamp("1983-01-03")
 TENORS = (2, 5, 10)
 
@@ -86,7 +87,7 @@ def load_french_market_return(data_dir: str | Path = "data/raw", *,
 
 def build_panel(yields: pd.DataFrame, equity_simple_pct: pd.Series, *,
                 start: str | pd.Timestamp = SAMPLE_START,
-                end: str | pd.Timestamp = HOLDOUT_START - pd.Timedelta(days=1),
+                end: str | pd.Timestamp = TRAIN_END,
                 unseal_holdout: bool = False) -> pd.DataFrame:
     """Align yields and equity on common trading days and form daily changes.
 
@@ -115,7 +116,7 @@ def build_panel(yields: pd.DataFrame, equity_simple_pct: pd.Series, *,
 
 
 def load_us_panel(data_dir: str | Path = "data/raw", *, start=SAMPLE_START,
-                  end=HOLDOUT_START - pd.Timedelta(days=1),
+                  end=TRAIN_END,
                   unseal_holdout: bool = False) -> pd.DataFrame:
     """The pre-registered estimation panel (1983-2025 by default)."""
     ylds = load_gsw_zero_yields(data_dir, unseal_holdout=unseal_holdout)

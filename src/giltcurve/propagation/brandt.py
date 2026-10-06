@@ -41,7 +41,7 @@ import numpy as np
 import pandas as pd
 
 from giltcurve.propagation.bvar import design, fit_bvar
-from giltcurve.propagation.data import HOLDOUT_START, HoldoutSealedError, seal
+from giltcurve.propagation.data import HOLDOUT_START, TRAIN_END, HoldoutSealedError, seal
 from giltcurve.propagation.identification import sample_identified_set
 from giltcurve.propagation.predictive import _stack, _valid, ols_nw, r2_only, wald
 
@@ -100,7 +100,7 @@ def euro_equity_log_level(es50: pd.Series, dax: pd.Series, cac: pd.Series) -> pd
 
 def build_panel(bund10: pd.Series, ust10: pd.Series, eq_ea_log: pd.Series, eq_us: pd.Series,
                 eurusd: pd.Series, *, start=SAMPLE_START,
-                end=HOLDOUT_START - pd.Timedelta(days=1), unseal_holdout: bool = False) -> pd.DataFrame:
+                end=TRAIN_END, unseal_holdout: bool = False) -> pd.DataFrame:
     """Align the five series on common days and form the model's daily changes.
 
     ``eq_ea_log`` is a cumulative log return in percent (see
@@ -124,7 +124,7 @@ def build_panel(bund10: pd.Series, ust10: pd.Series, eq_ea_log: pd.Series, eq_us
     return out.loc[(out.index >= start) & (out.index <= end)]
 
 
-def load_panel(data_dir="data/raw", *, start=SAMPLE_START, end=HOLDOUT_START - pd.Timedelta(days=1),
+def load_panel(data_dir="data/raw", *, start=SAMPLE_START, end=TRAIN_END,
                unseal_holdout: bool = False, max_age_days: float | None = 1.0) -> pd.DataFrame:
     from giltcurve.ingest.market import load_bund_zero, load_fred, load_yahoo_close
     from giltcurve.propagation.data import load_gsw_zero_yields
@@ -338,7 +338,7 @@ def spliced_ois(eonia_mid: pd.Series, estr_mid: pd.Series, switch=OIS_SWITCH) ->
 
 
 def load_panel_sync(data_dir="data/raw", *, start=SYNC_START,
-                    end=HOLDOUT_START - pd.Timedelta(days=1), unseal_holdout: bool = False,
+                    end=TRAIN_END, unseal_holdout: bool = False,
                     rate: str = "ois") -> pd.DataFrame:
     """The cross-Atlantic panel on prices recorded at or near the New York close.
 
