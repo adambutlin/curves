@@ -1,0 +1,3370 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What drove the 2026 Treasury selloff?</title>
+<meta name="description" content="A structural cross-asset decomposition of the 2026 rise in US Treasury yields, using a sign-identified Bayesian VAR frozen at end-2025.">
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink2: #52514e; --muted: #898781;
+  --grid: #e1e0d9; --axis: #c3c2b7; --rule: rgba(11, 11, 11, 0.10);
+  --us: #2a78d6; --gl: #eb6834; --ea: #1baf7a; --un: #b3b1a9;
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  --sans: system-ui, -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--page); color: var(--ink); }
+body { font: 17px/1.62 var(--serif); -webkit-text-size-adjust: 100%; }
+main { max-width: 740px; margin: 0 auto; padding: 56px 16px 72px; }
+h1, h2, h3, .kicker, .dek, .byline, .stat, figure, .tableview, .eq-note, nav, footer, table { font-family: var(--sans); }
+.kicker { text-transform: uppercase; letter-spacing: 0.08em; font-size: 12.5px; color: var(--muted); margin: 0 0 10px; font-weight: 600; }
+h1 { font-size: clamp(30px, 5vw, 42px); line-height: 1.12; margin: 0 0 14px; letter-spacing: -0.01em; }
+.dek { font-size: 18.5px; line-height: 1.45; color: var(--ink2); margin: 0 0 14px; }
+.byline { font-size: 14px; color: var(--muted); margin: 0 0 30px; }
+h2 { font-size: 22px; line-height: 1.25; margin: 52px 0 12px; }
+h3 { font-size: 16px; margin: 28px 0 8px; }
+p { margin: 0 0 16px; }
+a { color: #1c5cab; }
+.lead { font-size: 19px; line-height: 1.55; border-top: 2px solid var(--ink); padding-top: 18px; }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 26px 0 8px; }
+.stat { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 14px 14px 12px; }
+.stat .v { font-size: 27px; font-weight: 650; line-height: 1.1; }
+.stat .l { font-size: 13px; line-height: 1.35; color: var(--ink2); margin-top: 6px; }
+figure { margin: 30px calc(50% - min(490px, 50vw - 16px)); }
+.figtitle { font-size: 16px; font-weight: 650; margin: 0 0 4px; }
+.fignum { color: var(--muted); font-weight: 600; margin-right: 6px; }
+.chart { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 10px 10px 4px; overflow-x: auto; }
+.chart svg { display: block; width: 100%; height: auto; min-width: 600px; }
+figcaption { font-size: 13.5px; line-height: 1.45; color: var(--ink2); margin-top: 8px; max-width: 760px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--ink2); margin: 4px 0 6px; }
+.legend span { display: inline-flex; align-items: center; gap: 7px; }
+.key { width: 18px; height: 3px; border-radius: 2px; display: inline-block; }
+.key.band { height: 10px; opacity: 0.35; }
+#fig1-chart { position: relative; outline: none; }
+#fig1-chart:focus-visible { box-shadow: 0 0 0 2px var(--us); border-radius: 6px; }
+#fig1-chart svg { min-width: 0; }
+#fig1-chart .tick { font: 12px var(--sans); fill: var(--ink2); font-variant-numeric: tabular-nums; }
+#fig1-chart .note { font: 12px var(--sans); fill: var(--ink2); }
+#fig1-chart .endlab { font: 12.5px var(--sans); fill: var(--ink); }
+#fig1-chart .endlab.strong { font-weight: 650; }
+#fig1-chart .endsub { font: 11.5px var(--sans); fill: var(--ink2); }
+.tip { position: absolute; pointer-events: none; background: #fff; border: 1px solid var(--rule); border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08); padding: 9px 11px; font: 12.5px/1.45 var(--sans); min-width: 210px; display: none; z-index: 2; }
+.tip .d { font-weight: 650; margin-bottom: 4px; }
+.tip table { width: 100%; border-collapse: collapse; }
+.tip td { padding: 1px 0; }
+.tip td.n { text-align: right; font-variant-numeric: tabular-nums; padding-left: 12px; }
+.tip .sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.tip .sub td { color: var(--ink2); font-size: 11.5px; padding-left: 16px; }
+.hint { font-size: 12.5px; color: var(--muted); margin: 6px 0 0; }
+.tableview { margin: 10px 0 26px; font-size: 14px; }
+.tableview summary { cursor: pointer; color: var(--ink2); font-size: 13.5px; }
+.tablewrap { overflow-x: auto; margin-top: 8px; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; background: var(--surface); }
+th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--grid); vertical-align: top; }
+thead th { font-weight: 650; color: var(--ink2); border-bottom: 1px solid var(--axis); }
+.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rng { color: var(--muted); font-size: 12px; }
+.eq { font-family: var(--serif); font-size: 18px; text-align: center; margin: 14px 0 16px; overflow-x: auto; white-space: nowrap; }
+.eq var { font-style: italic; }
+.eq-note { font-size: 14px; color: var(--ink2); }
+.restrict td, .restrict th { text-align: center; }
+.restrict th[scope=row] { text-align: left; }
+.restrict .p { color: var(--us); font-weight: 700; }
+.restrict .m { color: #d03b3b; font-weight: 700; }
+ol.refs { padding-left: 20px; font-size: 15px; }
+ol.refs li { margin-bottom: 8px; }
+.callout { background: var(--surface); border-left: 3px solid var(--ink); padding: 12px 16px; margin: 20px 0; font-size: 16px; }
+footer { border-top: 1px solid var(--axis); margin-top: 56px; padding-top: 16px; font-size: 13.5px; color: var(--ink2); }
+footer code { font-size: 12.5px; }
+@media (max-width: 720px) {
+  body { font-size: 16.5px; }
+  main { padding-top: 32px; }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+}
+@media print {
+  body { background: #fff; }
+  figure { margin: 24px 0; }
+  .chart svg { min-width: 0; }
+  details { display: block; }
+}
+</style>
+</head>
+<body>
+<main>
+<header>
+<p class="kicker">Research note · October 2026</p>
+<h1>What drove the 2026 Treasury selloff?</h1>
+<p class="dek">A structural cross-asset decomposition of the US Treasury curve, from a Bayesian VAR identified with sign restrictions (Brandt et al., 2021), frozen at end-2025 and applied to 2026 without re-estimation.</p>
+<p class="byline">Adam Butlin · Data to 5 October 2026 · <a href="https://github.com/adambutlin/curves">Code and data</a></p>
+</header>
+
+<p class="lead">Between the closes of 30 December 2025 and 5 October 2026 the 10-year Treasury yield rose 117bp and the 2-year 139bp. At the long end, the rise was news that also moved equities, the dollar and euro-area rates, and US news was its largest source in 80% of admissible models (median 76bp of the 10-year's rise). The front end was different: about 61bp of the 2-year's rise was a repricing of the expected policy path that no cross-asset shock explains, and that repricing accounts for the whole of the curve's bear flattening. The decomposition explains most of each day's move but has no value for forecasting the next.</p>
+
+<div class="stats">
+  <div class="stat"><div class="v">+117bp</div><div class="l">10-year Treasury yield, 30 Dec 2025 to 5 Oct 2026</div></div>
+  <div class="stat"><div class="v">76bp</div><div class="l">from US news: median of admissible models (5–95%: 31–119bp)</div></div>
+  <div class="stat"><div class="v">61bp</div><div class="l">of the 2-year's 139bp rise not explained by any cross-asset shock (44–80bp)</div></div>
+  <div class="stat"><div class="v">0 of 12</div><div class="l">maturity–horizon pairs at which knowing the shock improves on a no-change forecast</div></div>
+</div>
+
+<h2 id="decomposition">1. The 10-year: US news, plus a lift from risk sentiment</h2>
+<p>Yields fell into late February: by the 27 February low the 10-year was −17bp on the year, mostly on weaker US news. They then rose in three steps, in March, July and, most sharply, September (+54bp). In the representative model (the median-target model of Fry and Pagan, the single admissible model closest to the median impulse responses), US news accounts for 96bp of the 117bp rise, improving global risk sentiment for 21bp, and euro-area news for almost nothing (−1bp). A positive risk-sentiment contribution means risk appetite improved: the safe-haven demand for Treasuries unwound and yields rose. Together the five shocks leave essentially none of the 10-year's rise unexplained.</p>
+<p>Across all admissible models the 5–95% range of the US contribution is 31–119bp, with a median of 76bp. Its sign is certain; its size is not.</p>
+
+<figure>
+  <div class="figtitle"><span class="fignum">Figure 1</span>The 2026 rise in the 10-year Treasury yield tracked US news</div>
+  <div class="legend" aria-hidden="true">
+    <span><i class="key" style="background:#0b0b0b"></i>Actual 10-year yield</span>
+    <span><i class="key" style="background:var(--us)"></i>US news <i class="key band" style="background:var(--us)"></i>5–95% of admissible models</span>
+    <span><i class="key" style="background:var(--gl)"></i>Global risk sentiment</span>
+    <span><i class="key" style="background:var(--ea)"></i>Euro-area news</span>
+    <span><i class="key" style="background:var(--un)"></i>Unspanned (curve-specific news)</span>
+  </div>
+  <div class="chart"><div id="fig1-chart" tabindex="0" aria-label="Cumulative 10-year yield change and its decomposition through 2026. Use the left and right arrow keys to move through the days."></div></div>
+  <p class="hint">Hover, or focus the chart and use the arrow keys, to read the values on any day.</p>
+  <figcaption>Cumulative change in the 10-year H.15 yield since the close of 30 December 2025 and the contributions of the identified shocks in the median-target model, in basis points. The shaded band is the 5–95% range of the US-news contribution across the 1,000 admissible models. Vertical lines mark the pre-registered window boundaries. The window starts on 30 December because Eurex, where the model's euro-area equity future trades, was closed on 31 December; measured from the 31 December close the 10-year rose 113bp.</figcaption>
+</figure>
+<details class="tableview"><summary>Table: the 10-year by phase, bp (median-target model; in brackets the median and 5–95% range across admissible models)</summary><div class="tablewrap"><table><thead><tr><th scope="col">10-year</th><th scope="col" class=num>Actual</th><th scope="col" class=num>US news</th><th scope="col" class=num>Global risk sentiment</th><th scope="col" class=num>Euro-area news</th><th scope="col" class=num>Unspanned</th><th scope="col" class=num>US news largest</th></tr></thead><tbody><tr><th scope="row">30 Dec 2025 to 27 Feb 2026</th><td class="num">−17</td><td class="num">−16 <span class=rng>(−14; −28 to 5)</span></td><td class="num">+6 <span class=rng>(+1; −16 to 12)</span></td><td class="num">−5 <span class=rng>(−2; −19 to 13)</span></td><td class="num">−1 <span class=rng>(−2; −7 to 3)</span></td><td class="num">67%</td></tr><tr><th scope="row">27 Feb to 19 Aug 2026</th><td class="num">+68</td><td class="num">+57 <span class=rng>(+46; 15–74)</span></td><td class="num">+13 <span class=rng>(+14; −2 to 48)</span></td><td class="num">0 <span class=rng>(+6; −7 to 34)</span></td><td class="num">−1 <span class=rng>(−4; −17 to 13)</span></td><td class="num">75%</td></tr><tr><th scope="row">19 Aug to 5 Oct 2026</th><td class="num">+66</td><td class="num">+55 <span class=rng>(+44; 18–65)</span></td><td class="num">+3 <span class=rng>(+8; −5 to 36)</span></td><td class="num">+4 <span class=rng>(+6; −4 to 31)</span></td><td class="num">+4 <span class=rng>(+3; −2 to 8)</span></td><td class="num">84%</td></tr><tr><th scope="row">30 Dec 2025 to 5 Oct 2026 (whole period)</th><td class="num">+117</td><td class="num">+96 <span class=rng>(+76; 31–119)</span></td><td class="num">+21 <span class=rng>(+24; −2 to 74)</span></td><td class="num">−1 <span class=rng>(+11; −1 to 47)</span></td><td class="num">+1 <span class=rng>(−2; −25 to 25)</span></td><td class="num">80%</td></tr></tbody></table></div></details>
+
+<h2 id="curve">2. Across the curve: the same news at the long end, a policy repricing at the front</h2>
+<p>At 5, 10 and 30 years the cross-asset shocks account for nearly all of the rise. At 2 years they account for only about half: 61bp of the 139bp (44–80bp across admissible models) is news that moved the 2-year without the equity, currency and euro-area signature of any identified shock. The NY Fed's term-structure model (Adrian, Crump and Moench) places that part in expected short rates rather than in the term premium: 66bp of the 2-year's 99bp rise in expected rates is unspanned, against −10bp of its 36bp rise in the term premium. It is a repricing of the expected path of the federal funds rate, the kind of news carried by data releases and Fed communication that markets price mainly at the front end.</p>
+<p>Every identified shock steepens the curve when it raises yields: its 10-year loading exceeds its 2-year loading in at least 83% of admissible models for the US and global shocks. The cross-asset news therefore steepened 2s10s, by 41bp (31–50), and the 22bp bear flattening came entirely from the unspanned front-end repricing (−63bp; −72 to −53). At the long end, 10s30s flattened by 32bp, partly because US news moves 5- to 10-year yields most (−12bp) and partly through unspanned news (−19bp).</p>
+
+<figure>
+  <div class="figtitle"><span class="fignum">Figure 2</span>Long maturities moved with cross-asset news; the front end added a repricing of its own</div>
+  <div class="chart"><svg role="img" preserveAspectRatio="xMidYMid meet" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 675.092562 366.5965" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="f2-figure_1">
+  <g id="f2-patch_1">
+   <path d="M 0 366.5965 
+L 675.092562 366.5965 
+L 675.092562 0 
+L 0 0 
+z
+" style="fill: #fcfcfb"/>
+  </g>
+  <g id="f2-axes_1">
+   <g id="f2-patch_2">
+    <path d="M 66.692563 332.444 
+L 671.492562 332.444 
+L 671.492562 25.292 
+L 66.692563 25.292 
+z
+" style="fill: #fcfcfb"/>
+   </g>
+   <g id="f2-matplotlib.axis_1">
+    <g id="f2-xtick_1">
+     <g id="f2-line2d_1">
+      <path d="M 137.845504 332.444 
+L 137.845504 25.292 
+" clip-path="url(#f2-p12e0382c4e)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f2-line2d_2"/>
+     <g id="f2-text_1">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="137.845504" y="346.012" transform="rotate(-0 137.845504 346.012)">−50</text>
+     </g>
+    </g>
+    <g id="f2-xtick_2">
+     <g id="f2-line2d_3">
+      <path d="M 256.433739 332.444 
+L 256.433739 25.292 
+" clip-path="url(#f2-p12e0382c4e)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f2-line2d_4"/>
+     <g id="f2-text_2">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="256.433739" y="346.012" transform="rotate(-0 256.433739 346.012)">0</text>
+     </g>
+    </g>
+    <g id="f2-xtick_3">
+     <g id="f2-line2d_5">
+      <path d="M 375.021974 332.444 
+L 375.021974 25.292 
+" clip-path="url(#f2-p12e0382c4e)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f2-line2d_6"/>
+     <g id="f2-text_3">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="375.021974" y="346.012" transform="rotate(-0 375.021974 346.012)">50</text>
+     </g>
+    </g>
+    <g id="f2-xtick_4">
+     <g id="f2-line2d_7">
+      <path d="M 493.61021 332.444 
+L 493.61021 25.292 
+" clip-path="url(#f2-p12e0382c4e)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f2-line2d_8"/>
+     <g id="f2-text_4">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="493.61021" y="346.012" transform="rotate(-0 493.61021 346.012)">100</text>
+     </g>
+    </g>
+    <g id="f2-xtick_5">
+     <g id="f2-line2d_9">
+      <path d="M 612.198445 332.444 
+L 612.198445 25.292 
+" clip-path="url(#f2-p12e0382c4e)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f2-line2d_10"/>
+     <g id="f2-text_5">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="612.198445" y="346.012" transform="rotate(-0 612.198445 346.012)">150</text>
+     </g>
+    </g>
+    <g id="f2-text_6">
+     <text style="font-size: 9.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="369.092562" y="360.973" transform="rotate(-0 369.092562 360.973)">Change from 30 Dec 2025 to 5 Oct 2026, bp</text>
+    </g>
+   </g>
+   <g id="f2-matplotlib.axis_2">
+    <g id="f2-ytick_1">
+     <g id="f2-line2d_11"/>
+     <g id="f2-text_7">
+      <text style="font-size: 9.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="61.692563" y="55.360349" transform="rotate(-0 61.692563 55.360349)">2-year</text>
+     </g>
+    </g>
+    <g id="f2-ytick_2">
+     <g id="f2-line2d_12"/>
+     <g id="f2-text_8">
+      <text style="font-size: 9.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="61.692563" y="101.54862" transform="rotate(-0 61.692563 101.54862)">5-year</text>
+     </g>
+    </g>
+    <g id="f2-ytick_3">
+     <g id="f2-line2d_13"/>
+     <g id="f2-text_9">
+      <text style="font-size: 9.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="61.692563" y="147.73689" transform="rotate(-0 61.692563 147.73689)">10-year</text>
+     </g>
+    </g>
+    <g id="f2-ytick_4">
+     <g id="f2-line2d_14"/>
+     <g id="f2-text_10">
+      <text style="font-size: 9.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="61.692563" y="193.925161" transform="rotate(-0 61.692563 193.925161)">30-year</text>
+     </g>
+    </g>
+    <g id="f2-ytick_5">
+     <g id="f2-line2d_15"/>
+     <g id="f2-text_11">
+      <text style="font-size: 9.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="61.692563" y="263.207567" transform="rotate(-0 61.692563 263.207567)">2s10s slope</text>
+     </g>
+    </g>
+    <g id="f2-ytick_6">
+     <g id="f2-line2d_16"/>
+     <g id="f2-text_12">
+      <text style="font-size: 9.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="61.692563" y="309.395838" transform="rotate(-0 61.692563 309.395838)">10s30s slope</text>
+     </g>
+    </g>
+   </g>
+   <g id="f2-patch_3">
+    <path d="M 256.433739 62.242617 
+L 410.721777 62.242617 
+L 410.721777 39.148481 
+L 256.433739 39.148481 
+z
+" clip-path="url(#f2-p12e0382c4e)" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="f2-patch_4">
+    <path d="M 410.721777 62.242617 
+L 432.662972 62.242617 
+L 432.662972 39.148481 
+L 410.721777 39.148481 
+z
+" clip-path="url(#f2-p12e0382c4e)" style="fill: #eb6834; stroke: #fcfcfb; stroke-width: 1.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="f2-patch_5">
+    <path d="M 256.433739 62.242617 
+L 255.579904 62.242617 
+L 255.579904 39.148481 
+L 256.433739 39.148481 
+z
+" clip-path="url(#f2-p12e0382c4e)" style="fill: #1baf7a; stroke: #fcfcfb; stroke-width: 1.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="f2-patch_6">
+    <path d="M 432.662972 62.242617 
+L 586.962868 62.242617 
+L 586.962868 39.148481 
+L 432.662972 39.148481 
+z
+" clip-path="url(#f2-p12e0382c4e)" style="fill: #b3b1a9; stroke: #fcfcfb; stroke-width: 1.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="f2-patch_7">
+    <path d="M 256.433739 108.430887 
+L 477.330417 108.430887 
+L 477.330417 85.336752 
+L 256.433739 85.336752 
+z
+" clip-path="url(#f2-p12e0382c4e)" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="f2-patch_8">
+    <path d="M 477.330417 108.430887 
+L 518.741428 108.430887 
+L 518.741428 85.336752 
+L 477.330417 85.336752 
+z
+" clip-path="url(#f2-p12e0382c4e)" style="fill: #eb6834; stroke: #fcfcfb; stroke-width: 1.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="f2-patch_9">
+    <path d="M 256.433739 108.430887 
+L 254.254087 108.430887 
+L 254.254087 85.336752 
+L 256.433739 85.336752 
+z
+" clip-path="url(#f2-p12e0382c4e)" style="fill: #1baf7a; stroke: #fcfcfb; stroke-width: 1.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="f2-patch_10">
+    <path d="M 518.741428 108.430887 
+L 585.919292 108.430887 
+L 585.919292 85.336752 
+L 518.741428 85.336752 
+z
+" clip-path="url(#f2-p12e0382c4e)" style="fill: #b3b1a9; stroke: #fcfcfb; stroke-width: 1.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="f2-patch_11">
+    <path d="M 256.433739 154.619158 
+L 484.730322 154.619158 
+L 484.730322 131.525023 
+L 256.433739 131.525023 
+z
+" clip-path="url(#f2-p12e0382c4e)" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="f2-patch_12">
+    <path d="M 484.730322 154.619158 
+L 534.760327 154.619158 
+L 534.760327 131.525023 
+L 484.730322 131.525023 
+z
+" clip-path="url(#f2-p12e0382c4e)" style="fill: #eb6834; stroke: #fcfcfb; stroke-width: 1.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="f2-patch_13">
+    <path d="M 256.433739 154.619158 
+L 252.925899 154.619158 
+L 252.925899 131.525023 
+L 256.433739 131.525023 
+z
+" clip-path="url(#f2-p12e0382c4e)" style="fill: #1baf7a; stroke: #fcfcfb; stroke-width: 1.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="f2-patch_14">
+    <path d="M 534.760327 154.619158 
+L 537.43805 154.619158 
+L 537.43805 131.525023 
+L 534.760327 131.525023 
+z
+" clip-path="url(#f2-p12e0382c4e)" style="fill: #b3b1a9; stroke: #fcfcfb; stroke-width: 1.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="f2-patch_15">
+    <path d="M 256.433739 200.807429 
+L 457.279518 200.807429 
+L 457.279518 177.713293 
+L 256.433739 177.713293 
+z
+" clip-path="url(#f2-p12e0382c4e)" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="f2-patch_16">
+    <path d="M 457.279518 200.807429 
+L 508.927066 200.807429 
+L 508.927066 177.713293 
+L 457.279518 177.713293 
+z
+" clip-path="url(#f2-p12e0382c4e)" style="fill: #eb6834; stroke: #fcfcfb; stroke-width: 1.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="f2-patch_17">
+    <path d="M 256.433739 200.807429 
+L 252.34956 200.807429 
+L 252.34956 177.713293 
+L 256.433739 177.713293 
+z
+" clip-path="url(#f2-p12e0382c4e)" style="fill: #1baf7a; stroke: #fcfcfb; stroke-width: 1.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="f2-patch_18">
+    <path d="M 252.34956 200.807429 
+L 205.542784 200.807429 
+L 205.542784 177.713293 
+L 252.34956 177.713293 
+z
+" clip-path="url(#f2-p12e0382c4e)" style="fill: #b3b1a9; stroke: #fcfcfb; stroke-width: 1.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="f2-patch_19">
+    <path d="M 256.433739 270.089835 
+L 330.442285 270.089835 
+L 330.442285 246.995699 
+L 256.433739 246.995699 
+z
+" clip-path="url(#f2-p12e0382c4e)" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="f2-patch_20">
+    <path d="M 330.442285 270.089835 
+L 358.531094 270.089835 
+L 358.531094 246.995699 
+L 330.442285 246.995699 
+z
+" clip-path="url(#f2-p12e0382c4e)" style="fill: #eb6834; stroke: #fcfcfb; stroke-width: 1.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="f2-patch_21">
+    <path d="M 256.433739 270.089835 
+L 253.777363 270.089835 
+L 253.777363 246.995699 
+L 256.433739 246.995699 
+z
+" clip-path="url(#f2-p12e0382c4e)" style="fill: #1baf7a; stroke: #fcfcfb; stroke-width: 1.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="f2-patch_22">
+    <path d="M 253.777363 270.089835 
+L 102.15756 270.089835 
+L 102.15756 246.995699 
+L 253.777363 246.995699 
+z
+" clip-path="url(#f2-p12e0382c4e)" style="fill: #b3b1a9; stroke: #fcfcfb; stroke-width: 1.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="f2-patch_23">
+    <path d="M 256.433739 316.278105 
+L 228.980563 316.278105 
+L 228.980563 293.18397 
+L 256.433739 293.18397 
+z
+" clip-path="url(#f2-p12e0382c4e)" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="f2-patch_24">
+    <path d="M 256.433739 316.278105 
+L 258.051283 316.278105 
+L 258.051283 293.18397 
+L 256.433739 293.18397 
+z
+" clip-path="url(#f2-p12e0382c4e)" style="fill: #eb6834; stroke: #fcfcfb; stroke-width: 1.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="f2-patch_25">
+    <path d="M 228.980563 316.278105 
+L 228.404224 316.278105 
+L 228.404224 293.18397 
+L 228.980563 293.18397 
+z
+" clip-path="url(#f2-p12e0382c4e)" style="fill: #1baf7a; stroke: #fcfcfb; stroke-width: 1.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="f2-patch_26">
+    <path d="M 228.404224 316.278105 
+L 178.919725 316.278105 
+L 178.919725 293.18397 
+L 228.404224 293.18397 
+z
+" clip-path="url(#f2-p12e0382c4e)" style="fill: #b3b1a9; stroke: #fcfcfb; stroke-width: 1.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="f2-line2d_17">
+    <path d="M 66.692563 223.901564 
+L 671.492562 223.901564 
+" clip-path="url(#f2-p12e0382c4e)" style="fill: none; stroke: #e1e0d9; stroke-linecap: round"/>
+   </g>
+   <g id="f2-patch_27">
+    <path d="M 66.692563 332.444 
+L 671.492562 332.444 
+" style="fill: none; stroke: #c3c2b7; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="f2-text_13">
+    <text style="font-weight: 700; font-size: 9.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="596.449927" y="54.296049" transform="rotate(-0 596.449927 54.296049)">+139</text>
+   </g>
+   <g id="f2-text_14">
+    <text style="font-weight: 700; font-size: 9.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="595.406351" y="100.48432" transform="rotate(-0 595.406351 100.48432)">+138</text>
+   </g>
+   <g id="f2-text_15">
+    <text style="font-weight: 700; font-size: 9.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="546.925108" y="146.67259" transform="rotate(-0 546.925108 146.67259)">+117</text>
+   </g>
+   <g id="f2-text_16">
+    <text style="font-weight: 700; font-size: 9.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="518.414125" y="192.860861" transform="rotate(-0 518.414125 192.860861)">+85</text>
+   </g>
+   <g id="f2-text_17">
+    <text style="font-weight: 700; font-size: 9.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="368.018153" y="262.143267" transform="rotate(-0 368.018153 262.143267)">−22</text>
+   </g>
+   <g id="f2-text_18">
+    <text style="font-weight: 700; font-size: 9.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="267.538341" y="308.331538" transform="rotate(-0 267.538341 308.331538)">−32</text>
+   </g>
+   <g id="f2-line2d_18">
+    <path d="M 256.433739 332.444 
+L 256.433739 25.292 
+" clip-path="url(#f2-p12e0382c4e)" style="fill: none; stroke: #52514e; stroke-linecap: round"/>
+   </g>
+   <g id="f2-text_19">
+    <text style="font-size: 8.6px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #ffffff" x="333.577758" y="53.873249" transform="rotate(-0 333.577758 53.873249)">65</text>
+   </g>
+   <g id="f2-text_20">
+    <text style="font-size: 8.6px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #0b0b0b" x="509.81292" y="53.873249" transform="rotate(-0 509.81292 53.873249)">65</text>
+   </g>
+   <g id="f2-text_21">
+    <text style="font-size: 8.6px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #ffffff" x="366.882078" y="100.06152" transform="rotate(-0 366.882078 100.06152)">93</text>
+   </g>
+   <g id="f2-text_22">
+    <text style="font-size: 8.6px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #0b0b0b" x="498.035922" y="100.06152" transform="rotate(-0 498.035922 100.06152)">17</text>
+   </g>
+   <g id="f2-text_23">
+    <text style="font-size: 8.6px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #0b0b0b" x="552.33036" y="100.06152" transform="rotate(-0 552.33036 100.06152)">28</text>
+   </g>
+   <g id="f2-text_24">
+    <text style="font-size: 8.6px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #ffffff" x="370.582031" y="146.24979" transform="rotate(-0 370.582031 146.24979)">96</text>
+   </g>
+   <g id="f2-text_25">
+    <text style="font-size: 8.6px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #0b0b0b" x="509.745325" y="146.24979" transform="rotate(-0 509.745325 146.24979)">21</text>
+   </g>
+   <g id="f2-text_26">
+    <text style="font-size: 8.6px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #ffffff" x="356.856628" y="192.438061" transform="rotate(-0 356.856628 192.438061)">85</text>
+   </g>
+   <g id="f2-text_27">
+    <text style="font-size: 8.6px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #0b0b0b" x="483.103292" y="192.438061" transform="rotate(-0 483.103292 192.438061)">22</text>
+   </g>
+   <g id="f2-text_28">
+    <text style="font-size: 8.6px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #0b0b0b" x="228.946172" y="192.438061" transform="rotate(-0 228.946172 192.438061)">20</text>
+   </g>
+   <g id="f2-text_29">
+    <text style="font-size: 8.6px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #ffffff" x="293.438012" y="261.720467" transform="rotate(-0 293.438012 261.720467)">31</text>
+   </g>
+   <g id="f2-text_30">
+    <text style="font-size: 8.6px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #0b0b0b" x="344.48669" y="261.720467" transform="rotate(-0 344.48669 261.720467)">12</text>
+   </g>
+   <g id="f2-text_31">
+    <text style="font-size: 8.6px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #0b0b0b" x="177.967461" y="261.720467" transform="rotate(-0 177.967461 261.720467)">64</text>
+   </g>
+   <g id="f2-text_32">
+    <text style="font-size: 8.6px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #ffffff" x="242.707151" y="307.908738" transform="rotate(-0 242.707151 307.908738)">12</text>
+   </g>
+   <g id="f2-text_33">
+    <text style="font-size: 8.6px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #0b0b0b" x="203.661974" y="307.908738" transform="rotate(-0 203.661974 307.908738)">21</text>
+   </g>
+   <g id="f2-line2d_19">
+    <path d="M 586.109033 50.695549 
+" clip-path="url(#f2-p12e0382c4e)" style="fill: none; stroke: #0b0b0b; stroke-width: 1.5; stroke-linecap: round"/>
+    <defs>
+     <path id="f2-mef02f9bf85" d="M -0 5.303301 
+L 5.303301 0 
+L 0 -5.303301 
+L -5.303301 -0 
+z
+" style="stroke: #fcfcfb; stroke-width: 1.6; stroke-linejoin: miter"/>
+    </defs>
+    <g clip-path="url(#f2-p12e0382c4e)">
+     <use xlink:href="#f2-mef02f9bf85" x="586.109033" y="50.695549" style="fill: #0b0b0b; stroke: #fcfcfb; stroke-width: 1.6; stroke-linejoin: miter"/>
+    </g>
+   </g>
+   <g id="f2-line2d_20">
+    <path d="M 583.737268 96.88382 
+" clip-path="url(#f2-p12e0382c4e)" style="fill: none; stroke: #0b0b0b; stroke-width: 1.5; stroke-linecap: round"/>
+    <g clip-path="url(#f2-p12e0382c4e)">
+     <use xlink:href="#f2-mef02f9bf85" x="583.737268" y="96.88382" style="fill: #0b0b0b; stroke: #fcfcfb; stroke-width: 1.6; stroke-linejoin: miter"/>
+    </g>
+   </g>
+   <g id="f2-line2d_21">
+    <path d="M 533.93021 143.07209 
+" clip-path="url(#f2-p12e0382c4e)" style="fill: none; stroke: #0b0b0b; stroke-width: 1.5; stroke-linecap: round"/>
+    <g clip-path="url(#f2-p12e0382c4e)">
+     <use xlink:href="#f2-mef02f9bf85" x="533.93021" y="143.07209" style="fill: #0b0b0b; stroke: #fcfcfb; stroke-width: 1.6; stroke-linejoin: miter"/>
+    </g>
+   </g>
+   <g id="f2-line2d_22">
+    <path d="M 458.033739 189.260361 
+" clip-path="url(#f2-p12e0382c4e)" style="fill: none; stroke: #0b0b0b; stroke-width: 1.5; stroke-linecap: round"/>
+    <g clip-path="url(#f2-p12e0382c4e)">
+     <use xlink:href="#f2-mef02f9bf85" x="458.033739" y="189.260361" style="fill: #0b0b0b; stroke: #fcfcfb; stroke-width: 1.6; stroke-linejoin: miter"/>
+    </g>
+   </g>
+   <g id="f2-line2d_23">
+    <path d="M 204.254915 258.542767 
+" clip-path="url(#f2-p12e0382c4e)" style="fill: none; stroke: #0b0b0b; stroke-width: 1.5; stroke-linecap: round"/>
+    <g clip-path="url(#f2-p12e0382c4e)">
+     <use xlink:href="#f2-mef02f9bf85" x="204.254915" y="258.542767" style="fill: #0b0b0b; stroke: #fcfcfb; stroke-width: 1.6; stroke-linejoin: miter"/>
+    </g>
+   </g>
+   <g id="f2-line2d_24">
+    <path d="M 180.537268 304.731038 
+" clip-path="url(#f2-p12e0382c4e)" style="fill: none; stroke: #0b0b0b; stroke-width: 1.5; stroke-linecap: round"/>
+    <g clip-path="url(#f2-p12e0382c4e)">
+     <use xlink:href="#f2-mef02f9bf85" x="180.537268" y="304.731038" style="fill: #0b0b0b; stroke: #fcfcfb; stroke-width: 1.6; stroke-linejoin: miter"/>
+    </g>
+   </g>
+   <g id="f2-legend_1">
+    <g id="f2-patch_28">
+     <path d="M 74.612563 15.4976 
+L 86.052563 15.4976 
+L 86.052563 9.3376 
+L 74.612563 9.3376 
+z
+" style="fill: #2a78d6; stroke: #2a78d6; stroke-linejoin: miter"/>
+    </g>
+    <g id="f2-text_34">
+     <text style="font-size: 8.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="93.092563" y="15.4976" transform="rotate(-0 93.092563 15.4976)">US news</text>
+    </g>
+    <g id="f2-patch_29">
+     <path d="M 139.722938 15.4976 
+L 151.162937 15.4976 
+L 151.162937 9.3376 
+L 139.722938 9.3376 
+z
+" style="fill: #eb6834; stroke: #eb6834; stroke-linejoin: miter"/>
+    </g>
+    <g id="f2-text_35">
+     <text style="font-size: 8.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="158.202938" y="15.4976" transform="rotate(-0 158.202938 15.4976)">Global risk sentiment</text>
+    </g>
+    <g id="f2-patch_30">
+     <path d="M 252.610438 15.4976 
+L 264.050438 15.4976 
+L 264.050438 9.3376 
+L 252.610438 9.3376 
+z
+" style="fill: #1baf7a; stroke: #1baf7a; stroke-linejoin: miter"/>
+    </g>
+    <g id="f2-text_36">
+     <text style="font-size: 8.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="271.090438" y="15.4976" transform="rotate(-0 271.090438 15.4976)">Euro-area news</text>
+    </g>
+    <g id="f2-patch_31">
+     <path d="M 344.130438 15.4976 
+L 355.570438 15.4976 
+L 355.570438 9.3376 
+L 344.130438 9.3376 
+z
+" style="fill: #b3b1a9; stroke: #b3b1a9; stroke-linejoin: miter"/>
+    </g>
+    <g id="f2-text_37">
+     <text style="font-size: 8.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="362.610438" y="15.4976" transform="rotate(-0 362.610438 15.4976)">Unspanned (curve-specific news)</text>
+    </g>
+    <g id="f2-line2d_25">
+     <defs>
+      <path id="f2-m9dca2f7a34" d="M -0 4.949747 
+L 4.949747 0 
+L 0 -4.949747 
+L -4.949747 -0 
+z
+" style="stroke: #0b0b0b; stroke-linejoin: miter"/>
+     </defs>
+     <g>
+      <use xlink:href="#f2-m9dca2f7a34" x="510.634688" y="12.4176" style="fill: #0b0b0b; stroke: #0b0b0b; stroke-linejoin: miter"/>
+     </g>
+    </g>
+    <g id="f2-text_38">
+     <text style="font-size: 8.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="523.394688" y="15.4976" transform="rotate(-0 523.394688 15.4976)">Actual change</text>
+    </g>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="f2-p12e0382c4e">
+   <rect x="66.692563" y="25.292" width="604.8" height="307.152"/>
+  </clipPath>
+ </defs>
+</svg>
+</div>
+  <figcaption>Contributions to each yield and slope between the closes of 30 December 2025 and 5 October 2026 in the median-target model; the diamond is the actual change. The unspanned part does not depend on the sign restrictions.</figcaption>
+</figure>
+<details class="tableview"><summary>Table: contributions by maturity, bp (median-target model; in brackets the median and 5–95% range across admissible models)</summary><div class="tablewrap"><table><thead><tr><th scope="col"></th><th scope="col" class=num>Actual</th><th scope="col" class=num>US news</th><th scope="col" class=num>Global risk sentiment</th><th scope="col" class=num>Euro-area news</th><th scope="col" class=num>Unspanned</th></tr></thead><tbody><tr><th scope="row">2-year</th><td class="num">+139</td><td class="num">+65 <span class=rng>(+53; 25–79)</span></td><td class="num">+9 <span class=rng>(+12; 0–42)</span></td><td class="num">0 <span class=rng>(+8; 0–31)</span></td><td class="num">+65 <span class=rng>(+61; 44–80)</span></td></tr><tr><th scope="row">5-year</th><td class="num">+138</td><td class="num">+93 <span class=rng>(+74; 32–114)</span></td><td class="num">+17 <span class=rng>(+21; −1 to 67)</span></td><td class="num">−1 <span class=rng>(+11; 0–46)</span></td><td class="num">+28 <span class=rng>(+24; 2–50)</span></td></tr><tr><th scope="row">10-year</th><td class="num">+117</td><td class="num">+96 <span class=rng>(+76; 31–119)</span></td><td class="num">+21 <span class=rng>(+24; −2 to 74)</span></td><td class="num">−1 <span class=rng>(+11; −1 to 47)</span></td><td class="num">+1 <span class=rng>(−2; −25 to 25)</span></td></tr><tr><th scope="row">30-year</th><td class="num">+85</td><td class="num">+85 <span class=rng>(+66; 25–106)</span></td><td class="num">+22 <span class=rng>(+23; −2 to 70)</span></td><td class="num">−2 <span class=rng>(+10; −1 to 43)</span></td><td class="num">−20 <span class=rng>(−22; −42 to 3)</span></td></tr><tr><th scope="row">2s10s slope</th><td class="num">−22</td><td class="num">+31 <span class=rng>(+22; 4–40)</span></td><td class="num">+12 <span class=rng>(+12; −2 to 32)</span></td><td class="num">−1 <span class=rng>(+4; −2 to 19)</span></td><td class="num">−64 <span class=rng>(−63; −72 to −53)</span></td></tr><tr><th scope="row">10s30s slope</th><td class="num">−32</td><td class="num">−12 <span class=rng>(−10; −14 to −6)</span></td><td class="num">+1 <span class=rng>(−1; −4 to 1)</span></td><td class="num">0 <span class=rng>(−1; −5 to 0)</span></td><td class="num">−21 <span class=rng>(−19; −23 to −17)</span></td></tr></tbody></table></div></details>
+
+<h2 id="timing">3. When it happened: three up-legs, each led by US news</h2>
+<p>The selloff was not one move. At the 10-year it came in March (+33bp; US news the largest origin in 87% of admissible models), July (+31bp; 65%) and September (+54bp; 86%). The dominant driver did not change: US news led every leg. In the quiet months the small moves are attributed mainly to risk sentiment in the representative model, but there the identification cannot tell global from euro-area news. At the 2-year the unspanned repricing came in the same bursts, adding +19bp in March, +13bp in June and +21bp in September.</p>
+
+<figure>
+  <div class="figtitle"><span class="fignum">Figure 3</span>The selloff came in three up-legs, March, July and September, each led by US news</div>
+  <div class="chart"><svg role="img" preserveAspectRatio="xMidYMid meet" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 697.874375 511.458" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="f3-figure_1">
+  <g id="f3-patch_1">
+   <path d="M 0 511.458 
+L 697.874375 511.458 
+L 697.874375 0 
+L 0 0 
+z
+" style="fill: #fcfcfb"/>
+  </g>
+  <g id="f3-axes_1">
+   <g id="f3-patch_2">
+    <path d="M 39.074375 233.117895 
+L 694.274375 233.117895 
+L 694.274375 39.16 
+L 39.074375 39.16 
+z
+" style="fill: #fcfcfb"/>
+   </g>
+   <g id="f3-matplotlib.axis_1">
+    <g id="f3-xtick_1">
+     <g id="f3-line2d_1"/>
+    </g>
+    <g id="f3-xtick_2">
+     <g id="f3-line2d_2"/>
+    </g>
+    <g id="f3-xtick_3">
+     <g id="f3-line2d_3"/>
+    </g>
+    <g id="f3-xtick_4">
+     <g id="f3-line2d_4"/>
+    </g>
+    <g id="f3-xtick_5">
+     <g id="f3-line2d_5"/>
+    </g>
+    <g id="f3-xtick_6">
+     <g id="f3-line2d_6"/>
+    </g>
+    <g id="f3-xtick_7">
+     <g id="f3-line2d_7"/>
+    </g>
+    <g id="f3-xtick_8">
+     <g id="f3-line2d_8"/>
+    </g>
+    <g id="f3-xtick_9">
+     <g id="f3-line2d_9"/>
+    </g>
+    <g id="f3-xtick_10">
+     <g id="f3-line2d_10"/>
+    </g>
+   </g>
+   <g id="f3-matplotlib.axis_2">
+    <g id="f3-ytick_1">
+     <g id="f3-line2d_11">
+      <path d="M 39.074375 210.951278 
+L 694.274375 210.951278 
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f3-line2d_12"/>
+     <g id="f3-text_1">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #52514e" x="34.074375" y="215.235278" transform="rotate(-0 34.074375 215.235278)">−40</text>
+     </g>
+    </g>
+    <g id="f3-ytick_2">
+     <g id="f3-line2d_13">
+      <path d="M 39.074375 183.243008 
+L 694.274375 183.243008 
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f3-line2d_14"/>
+     <g id="f3-text_2">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #52514e" x="34.074375" y="187.527008" transform="rotate(-0 34.074375 187.527008)">−20</text>
+     </g>
+    </g>
+    <g id="f3-ytick_3">
+     <g id="f3-line2d_15">
+      <path d="M 39.074375 155.534737 
+L 694.274375 155.534737 
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f3-line2d_16"/>
+     <g id="f3-text_3">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #52514e" x="34.074375" y="159.818737" transform="rotate(-0 34.074375 159.818737)">0</text>
+     </g>
+    </g>
+    <g id="f3-ytick_4">
+     <g id="f3-line2d_17">
+      <path d="M 39.074375 127.826466 
+L 694.274375 127.826466 
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f3-line2d_18"/>
+     <g id="f3-text_4">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #52514e" x="34.074375" y="132.110466" transform="rotate(-0 34.074375 132.110466)">20</text>
+     </g>
+    </g>
+    <g id="f3-ytick_5">
+     <g id="f3-line2d_19">
+      <path d="M 39.074375 100.118195 
+L 694.274375 100.118195 
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f3-line2d_20"/>
+     <g id="f3-text_5">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #52514e" x="34.074375" y="104.402195" transform="rotate(-0 34.074375 104.402195)">40</text>
+     </g>
+    </g>
+    <g id="f3-ytick_6">
+     <g id="f3-line2d_21">
+      <path d="M 39.074375 72.409925 
+L 694.274375 72.409925 
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f3-line2d_22"/>
+     <g id="f3-text_6">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #52514e" x="34.074375" y="76.693925" transform="rotate(-0 34.074375 76.693925)">60</text>
+     </g>
+    </g>
+    <g id="f3-ytick_7">
+     <g id="f3-line2d_23">
+      <path d="M 39.074375 44.701654 
+L 694.274375 44.701654 
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f3-line2d_24"/>
+     <g id="f3-text_7">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #52514e" x="34.074375" y="48.985654" transform="rotate(-0 34.074375 48.985654)">80</text>
+     </g>
+    </g>
+    <g id="f3-text_8">
+     <text style="font-size: 9.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="12.644" y="136.138947" transform="rotate(-90 12.644 136.138947)">bp</text>
+    </g>
+   </g>
+   <g id="f3-patch_3">
+    <path d="M 68.856193 155.534737 
+L 103.747026 155.534737 
+L 103.747026 155.108029 
+L 68.856193 155.108029 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_4">
+    <path d="M 131.161252 155.534737 
+L 166.052085 155.534737 
+L 166.052085 177.82327 
+L 131.161252 177.82327 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_5">
+    <path d="M 193.466311 155.534737 
+L 228.357144 155.534737 
+L 228.357144 102.54544 
+L 193.466311 102.54544 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_6">
+    <path d="M 255.77137 155.534737 
+L 290.662203 155.534737 
+L 290.662203 162.984105 
+L 255.77137 162.984105 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_7">
+    <path d="M 318.076429 155.534737 
+L 352.967262 155.534737 
+L 352.967262 153.022982 
+L 318.076429 153.022982 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_8">
+    <path d="M 380.381488 155.534737 
+L 415.272321 155.534737 
+L 415.272321 141.882872 
+L 380.381488 141.882872 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_9">
+    <path d="M 442.686547 155.534737 
+L 477.57738 155.534737 
+L 477.57738 127.945612 
+L 442.686547 127.945612 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_10">
+    <path d="M 504.991606 155.534737 
+L 539.882439 155.534737 
+L 539.882439 153.387346 
+L 504.991606 153.387346 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_11">
+    <path d="M 567.296665 155.534737 
+L 602.187498 155.534737 
+L 602.187498 91.995516 
+L 567.296665 91.995516 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_12">
+    <path d="M 629.601724 155.534737 
+L 664.492557 155.534737 
+L 664.492557 155.299217 
+L 629.601724 155.299217 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_13">
+    <path d="M 68.856193 155.108029 
+L 103.747026 155.108029 
+L 103.747026 139.27968 
+L 68.856193 139.27968 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #eb6834; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_14">
+    <path d="M 131.161252 177.82327 
+L 166.052085 177.82327 
+L 166.052085 185.861439 
+L 131.161252 185.861439 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #eb6834; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_15">
+    <path d="M 193.466311 155.534737 
+L 228.357144 155.534737 
+L 228.357144 166.982409 
+L 193.466311 166.982409 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #eb6834; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_16">
+    <path d="M 255.77137 155.534737 
+L 290.662203 155.534737 
+L 290.662203 140.26748 
+L 255.77137 140.26748 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #eb6834; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_17">
+    <path d="M 318.076429 153.022982 
+L 352.967262 153.022982 
+L 352.967262 144.20344 
+L 318.076429 144.20344 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #eb6834; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_18">
+    <path d="M 380.381488 155.534737 
+L 415.272321 155.534737 
+L 415.272321 157.082244 
+L 380.381488 157.082244 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #eb6834; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_19">
+    <path d="M 442.686547 127.945612 
+L 477.57738 127.945612 
+L 477.57738 122.46353 
+L 442.686547 122.46353 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #eb6834; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_20">
+    <path d="M 504.991606 153.387346 
+L 539.882439 153.387346 
+L 539.882439 151.837068 
+L 504.991606 151.837068 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #eb6834; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_21">
+    <path d="M 567.296665 91.995516 
+L 602.187498 91.995516 
+L 602.187498 90.380124 
+L 567.296665 90.380124 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #eb6834; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_22">
+    <path d="M 629.601724 155.299217 
+L 664.492557 155.299217 
+L 664.492557 153.604856 
+L 629.601724 153.604856 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #eb6834; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_23">
+    <path d="M 68.856193 155.534737 
+L 103.747026 155.534737 
+L 103.747026 156.372912 
+L 68.856193 156.372912 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #1baf7a; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_24">
+    <path d="M 131.161252 185.861439 
+L 166.052085 185.861439 
+L 166.052085 192.447695 
+L 131.161252 192.447695 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #1baf7a; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_25">
+    <path d="M 193.466311 102.54544 
+L 228.357144 102.54544 
+L 228.357144 97.218525 
+L 193.466311 97.218525 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #1baf7a; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_26">
+    <path d="M 255.77137 140.26748 
+L 290.662203 140.26748 
+L 290.662203 138.861285 
+L 255.77137 138.861285 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #1baf7a; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_27">
+    <path d="M 318.076429 155.534737 
+L 352.967262 155.534737 
+L 352.967262 157.133504 
+L 318.076429 157.133504 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #1baf7a; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_28">
+    <path d="M 380.381488 157.082244 
+L 415.272321 157.082244 
+L 415.272321 164.519144 
+L 380.381488 164.519144 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #1baf7a; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_29">
+    <path d="M 442.686547 122.46353 
+L 477.57738 122.46353 
+L 477.57738 120.852294 
+L 442.686547 120.852294 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #1baf7a; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_30">
+    <path d="M 504.991606 151.837068 
+L 539.882439 151.837068 
+L 539.882439 150.912997 
+L 504.991606 150.912997 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #1baf7a; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_31">
+    <path d="M 567.296665 90.380124 
+L 602.187498 90.380124 
+L 602.187498 85.950957 
+L 567.296665 85.950957 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #1baf7a; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_32">
+    <path d="M 629.601724 153.604856 
+L 664.492557 153.604856 
+L 664.492557 152.891368 
+L 629.601724 152.891368 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #1baf7a; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_33">
+    <path d="M 68.856193 139.27968 
+L 103.747026 139.27968 
+L 103.747026 138.071599 
+L 68.856193 138.071599 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #b3b1a9; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_34">
+    <path d="M 131.161252 192.447695 
+L 166.052085 192.447695 
+L 166.052085 195.710344 
+L 131.161252 195.710344 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #b3b1a9; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_35">
+    <path d="M 193.466311 166.982409 
+L 228.357144 166.982409 
+L 228.357144 168.132302 
+L 193.466311 168.132302 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #b3b1a9; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_36">
+    <path d="M 255.77137 138.861285 
+L 290.662203 138.861285 
+L 290.662203 134.231233 
+L 255.77137 134.231233 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #b3b1a9; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_37">
+    <path d="M 318.076429 157.133504 
+L 352.967262 157.133504 
+L 352.967262 159.938966 
+L 318.076429 159.938966 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #b3b1a9; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_38">
+    <path d="M 380.381488 164.519144 
+L 415.272321 164.519144 
+L 415.272321 170.573401 
+L 380.381488 170.573401 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #b3b1a9; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_39">
+    <path d="M 442.686547 120.852294 
+L 477.57738 120.852294 
+L 477.57738 112.588303 
+L 442.686547 112.588303 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #b3b1a9; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_40">
+    <path d="M 504.991606 155.534737 
+L 539.882439 155.534737 
+L 539.882439 160.156476 
+L 504.991606 160.156476 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #b3b1a9; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_41">
+    <path d="M 567.296665 85.950957 
+L 602.187498 85.950957 
+L 602.187498 80.722406 
+L 567.296665 80.722406 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #b3b1a9; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_42">
+    <path d="M 629.601724 152.891368 
+L 664.492557 152.891368 
+L 664.492557 152.76391 
+L 629.601724 152.76391 
+z
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: #b3b1a9; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_43">
+    <path d="M 39.074375 233.117895 
+L 694.274375 233.117895 
+" style="fill: none; stroke: #c3c2b7; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="f3-text_9">
+    <text style="font-size: 8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; fill: #52514e" transform="translate(119.538544 208.699883)">US news largest</text>
+    <text style="font-size: 8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; fill: #52514e" transform="translate(117.115419 220.134758)">in 50% of models</text>
+   </g>
+   <g id="f3-text_10">
+    <text style="font-size: 8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; fill: #52514e" transform="translate(181.843603 77.687371)">US news largest</text>
+    <text style="font-size: 8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; fill: #52514e" transform="translate(179.420478 89.122246)">in 87% of models</text>
+   </g>
+   <g id="f3-text_11">
+    <text style="font-size: 8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; fill: #52514e" transform="translate(431.063838 93.055763)">US news largest</text>
+    <text style="font-size: 8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; fill: #52514e" transform="translate(428.640713 104.490638)">in 65% of models</text>
+   </g>
+   <g id="f3-text_12">
+    <text style="font-size: 8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; fill: #52514e" transform="translate(555.673956 61.191252)">US news largest</text>
+    <text style="font-size: 8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; fill: #52514e" transform="translate(553.250831 72.626127)">in 86% of models</text>
+   </g>
+   <g id="f3-line2d_25">
+    <path d="M 39.074375 155.534737 
+L 694.274375 155.534737 
+" clip-path="url(#f3-pa99a4a6c58)" style="fill: none; stroke: #52514e; stroke-linecap: round"/>
+   </g>
+   <g id="f3-text_13">
+    <text style="font-weight: 700; font-size: 10.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="39.074375" y="33.16" transform="rotate(-0 39.074375 33.16)">10-year yield, change in month</text>
+   </g>
+   <g id="f3-line2d_26">
+    <defs>
+     <path id="f3-me0a9e797cf" d="M 0 3.5 
+C 0.928211 3.5 1.81853 3.131218 2.474874 2.474874 
+C 3.131218 1.81853 3.5 0.928211 3.5 0 
+C 3.5 -0.928211 3.131218 -1.81853 2.474874 -2.474874 
+C 1.81853 -3.131218 0.928211 -3.5 0 -3.5 
+C -0.928211 -3.5 -1.81853 -3.131218 -2.474874 -2.474874 
+C -3.131218 -1.81853 -3.5 -0.928211 -3.5 0 
+C -3.5 0.928211 -3.131218 1.81853 -2.474874 2.474874 
+C -1.81853 3.131218 -0.928211 3.5 0 3.5 
+z
+" style="stroke: #fcfcfb; stroke-width: 1.6"/>
+    </defs>
+    <g clip-path="url(#f3-pa99a4a6c58)">
+     <use xlink:href="#f3-me0a9e797cf" x="86.30161" y="138.909774" style="fill: #0b0b0b; stroke: #fcfcfb; stroke-width: 1.6"/>
+     <use xlink:href="#f3-me0a9e797cf" x="148.606669" y="195.711729" style="fill: #0b0b0b; stroke: #fcfcfb; stroke-width: 1.6"/>
+     <use xlink:href="#f3-me0a9e797cf" x="210.911728" y="109.81609" style="fill: #0b0b0b; stroke: #fcfcfb; stroke-width: 1.6"/>
+     <use xlink:href="#f3-me0a9e797cf" x="273.216787" y="141.680602" style="fill: #0b0b0b; stroke: #fcfcfb; stroke-width: 1.6"/>
+     <use xlink:href="#f3-me0a9e797cf" x="335.521846" y="148.607669" style="fill: #0b0b0b; stroke: #fcfcfb; stroke-width: 1.6"/>
+     <use xlink:href="#f3-me0a9e797cf" x="397.826904" y="156.92015" style="fill: #0b0b0b; stroke: #fcfcfb; stroke-width: 1.6"/>
+     <use xlink:href="#f3-me0a9e797cf" x="460.131963" y="112.586917" style="fill: #0b0b0b; stroke: #fcfcfb; stroke-width: 1.6"/>
+     <use xlink:href="#f3-me0a9e797cf" x="522.437022" y="155.534737" style="fill: #0b0b0b; stroke: #fcfcfb; stroke-width: 1.6"/>
+     <use xlink:href="#f3-me0a9e797cf" x="584.742081" y="80.722406" style="fill: #0b0b0b; stroke: #fcfcfb; stroke-width: 1.6"/>
+     <use xlink:href="#f3-me0a9e797cf" x="647.04714" y="152.76391" style="fill: #0b0b0b; stroke: #fcfcfb; stroke-width: 1.6"/>
+    </g>
+   </g>
+  </g>
+  <g id="f3-axes_2">
+   <g id="f3-patch_44">
+    <path d="M 39.074375 481.384 
+L 694.274375 481.384 
+L 694.274375 287.426105 
+L 39.074375 287.426105 
+z
+" style="fill: #fcfcfb"/>
+   </g>
+   <g id="f3-matplotlib.axis_3">
+    <g id="f3-xtick_11">
+     <g id="f3-line2d_27"/>
+     <g id="f3-text_14">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; fill: #52514e" transform="translate(79.047469 495.078)">Jan</text>
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; fill: #52514e" transform="translate(59.292469 505.815)">(from 30 Dec)</text>
+     </g>
+    </g>
+    <g id="f3-xtick_12">
+     <g id="f3-line2d_28"/>
+     <g id="f3-text_15">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="148.606669" y="494.952" transform="rotate(-0 148.606669 494.952)">Feb</text>
+     </g>
+    </g>
+    <g id="f3-xtick_13">
+     <g id="f3-line2d_29"/>
+     <g id="f3-text_16">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="210.911728" y="494.952" transform="rotate(-0 210.911728 494.952)">Mar</text>
+     </g>
+    </g>
+    <g id="f3-xtick_14">
+     <g id="f3-line2d_30"/>
+     <g id="f3-text_17">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="273.216787" y="494.952" transform="rotate(-0 273.216787 494.952)">Apr</text>
+     </g>
+    </g>
+    <g id="f3-xtick_15">
+     <g id="f3-line2d_31"/>
+     <g id="f3-text_18">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="335.521846" y="494.952" transform="rotate(-0 335.521846 494.952)">May</text>
+     </g>
+    </g>
+    <g id="f3-xtick_16">
+     <g id="f3-line2d_32"/>
+     <g id="f3-text_19">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="397.826904" y="494.952" transform="rotate(-0 397.826904 494.952)">Jun</text>
+     </g>
+    </g>
+    <g id="f3-xtick_17">
+     <g id="f3-line2d_33"/>
+     <g id="f3-text_20">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="460.131963" y="494.952" transform="rotate(-0 460.131963 494.952)">Jul</text>
+     </g>
+    </g>
+    <g id="f3-xtick_18">
+     <g id="f3-line2d_34"/>
+     <g id="f3-text_21">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="522.437022" y="494.952" transform="rotate(-0 522.437022 494.952)">Aug</text>
+     </g>
+    </g>
+    <g id="f3-xtick_19">
+     <g id="f3-line2d_35"/>
+     <g id="f3-text_22">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="584.742081" y="494.952" transform="rotate(-0 584.742081 494.952)">Sep</text>
+     </g>
+    </g>
+    <g id="f3-xtick_20">
+     <g id="f3-line2d_36"/>
+     <g id="f3-text_23">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; fill: #52514e" transform="translate(639.793 495.078)">Oct</text>
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; fill: #52514e" transform="translate(633.043 505.815)">(to 5th)</text>
+     </g>
+    </g>
+   </g>
+   <g id="f3-matplotlib.axis_4">
+    <g id="f3-ytick_8">
+     <g id="f3-line2d_37">
+      <path d="M 39.074375 459.217383 
+L 694.274375 459.217383 
+" clip-path="url(#f3-p13f1ac5967)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f3-line2d_38"/>
+     <g id="f3-text_24">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #52514e" x="34.074375" y="463.501383" transform="rotate(-0 34.074375 463.501383)">−40</text>
+     </g>
+    </g>
+    <g id="f3-ytick_9">
+     <g id="f3-line2d_39">
+      <path d="M 39.074375 431.509113 
+L 694.274375 431.509113 
+" clip-path="url(#f3-p13f1ac5967)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f3-line2d_40"/>
+     <g id="f3-text_25">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #52514e" x="34.074375" y="435.793113" transform="rotate(-0 34.074375 435.793113)">−20</text>
+     </g>
+    </g>
+    <g id="f3-ytick_10">
+     <g id="f3-line2d_41">
+      <path d="M 39.074375 403.800842 
+L 694.274375 403.800842 
+" clip-path="url(#f3-p13f1ac5967)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f3-line2d_42"/>
+     <g id="f3-text_26">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #52514e" x="34.074375" y="408.084842" transform="rotate(-0 34.074375 408.084842)">0</text>
+     </g>
+    </g>
+    <g id="f3-ytick_11">
+     <g id="f3-line2d_43">
+      <path d="M 39.074375 376.092571 
+L 694.274375 376.092571 
+" clip-path="url(#f3-p13f1ac5967)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f3-line2d_44"/>
+     <g id="f3-text_27">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #52514e" x="34.074375" y="380.376571" transform="rotate(-0 34.074375 380.376571)">20</text>
+     </g>
+    </g>
+    <g id="f3-ytick_12">
+     <g id="f3-line2d_45">
+      <path d="M 39.074375 348.384301 
+L 694.274375 348.384301 
+" clip-path="url(#f3-p13f1ac5967)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f3-line2d_46"/>
+     <g id="f3-text_28">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #52514e" x="34.074375" y="352.668301" transform="rotate(-0 34.074375 352.668301)">40</text>
+     </g>
+    </g>
+    <g id="f3-ytick_13">
+     <g id="f3-line2d_47">
+      <path d="M 39.074375 320.67603 
+L 694.274375 320.67603 
+" clip-path="url(#f3-p13f1ac5967)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f3-line2d_48"/>
+     <g id="f3-text_29">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #52514e" x="34.074375" y="324.96003" transform="rotate(-0 34.074375 324.96003)">60</text>
+     </g>
+    </g>
+    <g id="f3-ytick_14">
+     <g id="f3-line2d_49">
+      <path d="M 39.074375 292.967759 
+L 694.274375 292.967759 
+" clip-path="url(#f3-p13f1ac5967)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f3-line2d_50"/>
+     <g id="f3-text_30">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #52514e" x="34.074375" y="297.251759" transform="rotate(-0 34.074375 297.251759)">80</text>
+     </g>
+    </g>
+    <g id="f3-text_31">
+     <text style="font-size: 9.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="12.644" y="384.405053" transform="rotate(-90 12.644 384.405053)">bp</text>
+    </g>
+   </g>
+   <g id="f3-patch_45">
+    <path d="M 68.856193 403.800842 
+L 103.747026 403.800842 
+L 103.747026 405.769515 
+L 68.856193 405.769515 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_46">
+    <path d="M 131.161252 403.800842 
+L 166.052085 403.800842 
+L 166.052085 421.571542 
+L 131.161252 421.571542 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_47">
+    <path d="M 193.466311 403.800842 
+L 228.357144 403.800842 
+L 228.357144 370.340334 
+L 193.466311 370.340334 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_48">
+    <path d="M 255.77137 403.800842 
+L 290.662203 403.800842 
+L 290.662203 402.524876 
+L 255.77137 402.524876 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_49">
+    <path d="M 318.076429 403.800842 
+L 352.967262 403.800842 
+L 352.967262 399.475581 
+L 318.076429 399.475581 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_50">
+    <path d="M 380.381488 403.800842 
+L 415.272321 403.800842 
+L 415.272321 398.03198 
+L 380.381488 398.03198 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_51">
+    <path d="M 442.686547 403.800842 
+L 477.57738 403.800842 
+L 477.57738 386.654964 
+L 442.686547 386.654964 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_52">
+    <path d="M 504.991606 403.800842 
+L 539.882439 403.800842 
+L 539.882439 400.773714 
+L 504.991606 400.773714 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_53">
+    <path d="M 567.296665 403.800842 
+L 602.187498 403.800842 
+L 602.187498 360.483117 
+L 567.296665 360.483117 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_54">
+    <path d="M 629.601724 403.800842 
+L 664.492557 403.800842 
+L 664.492557 402.260262 
+L 629.601724 402.260262 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_55">
+    <path d="M 68.856193 403.800842 
+L 103.747026 403.800842 
+L 103.747026 397.251992 
+L 68.856193 397.251992 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #eb6834; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_56">
+    <path d="M 131.161252 421.571542 
+L 166.052085 421.571542 
+L 166.052085 425.030919 
+L 131.161252 425.030919 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #eb6834; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_57">
+    <path d="M 193.466311 403.800842 
+L 228.357144 403.800842 
+L 228.357144 408.112249 
+L 193.466311 408.112249 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #eb6834; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_58">
+    <path d="M 255.77137 402.524876 
+L 290.662203 402.524876 
+L 290.662203 395.808391 
+L 255.77137 395.808391 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #eb6834; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_59">
+    <path d="M 318.076429 399.475581 
+L 352.967262 399.475581 
+L 352.967262 396.036985 
+L 318.076429 396.036985 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #eb6834; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_60">
+    <path d="M 380.381488 403.800842 
+L 415.272321 403.800842 
+L 415.272321 403.965706 
+L 380.381488 403.965706 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #eb6834; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_61">
+    <path d="M 442.686547 386.654964 
+L 477.57738 386.654964 
+L 477.57738 384.736166 
+L 442.686547 384.736166 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #eb6834; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_62">
+    <path d="M 504.991606 400.773714 
+L 539.882439 400.773714 
+L 539.882439 400.190454 
+L 504.991606 400.190454 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #eb6834; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_63">
+    <path d="M 567.296665 360.483117 
+L 602.187498 360.483117 
+L 602.187498 359.72114 
+L 567.296665 359.72114 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #eb6834; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_64">
+    <path d="M 629.601724 402.260262 
+L 664.492557 402.260262 
+L 664.492557 401.478889 
+L 629.601724 401.478889 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #eb6834; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_65">
+    <path d="M 68.856193 405.769515 
+L 103.747026 405.769515 
+L 103.747026 405.863723 
+L 68.856193 405.863723 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #1baf7a; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_66">
+    <path d="M 131.161252 425.030919 
+L 166.052085 425.030919 
+L 166.052085 426.484218 
+L 131.161252 426.484218 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #1baf7a; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_67">
+    <path d="M 193.466311 370.340334 
+L 228.357144 370.340334 
+L 228.357144 369.258326 
+L 193.466311 369.258326 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #1baf7a; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_68">
+    <path d="M 255.77137 395.808391 
+L 290.662203 395.808391 
+L 290.662203 395.43433 
+L 255.77137 395.43433 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #1baf7a; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_69">
+    <path d="M 318.076429 403.800842 
+L 352.967262 403.800842 
+L 352.967262 404.167977 
+L 318.076429 404.167977 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #1baf7a; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_70">
+    <path d="M 380.381488 403.965706 
+L 415.272321 403.965706 
+L 415.272321 405.353891 
+L 380.381488 405.353891 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #1baf7a; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_71">
+    <path d="M 442.686547 384.736166 
+L 477.57738 384.736166 
+L 477.57738 384.635031 
+L 442.686547 384.635031 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #1baf7a; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_72">
+    <path d="M 504.991606 400.190454 
+L 539.882439 400.190454 
+L 539.882439 400.166902 
+L 504.991606 400.166902 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #1baf7a; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_73">
+    <path d="M 567.296665 359.72114 
+L 602.187498 359.72114 
+L 602.187498 358.765204 
+L 567.296665 358.765204 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #1baf7a; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_74">
+    <path d="M 629.601724 401.478889 
+L 664.492557 401.478889 
+L 664.492557 401.21289 
+L 629.601724 401.21289 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #1baf7a; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_75">
+    <path d="M 68.856193 397.251992 
+L 103.747026 397.251992 
+L 103.747026 392.041452 
+L 68.856193 392.041452 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #b3b1a9; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_76">
+    <path d="M 131.161252 403.800842 
+L 166.052085 403.800842 
+L 166.052085 400.514641 
+L 131.161252 400.514641 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #b3b1a9; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_77">
+    <path d="M 193.466311 369.258326 
+L 228.357144 369.258326 
+L 228.357144 342.68748 
+L 193.466311 342.68748 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #b3b1a9; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_78">
+    <path d="M 255.77137 395.43433 
+L 290.662203 395.43433 
+L 290.662203 391.33212 
+L 255.77137 391.33212 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #b3b1a9; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_79">
+    <path d="M 318.076429 396.036985 
+L 352.967262 396.036985 
+L 352.967262 389.580958 
+L 318.076429 389.580958 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #b3b1a9; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_80">
+    <path d="M 380.381488 398.03198 
+L 415.272321 398.03198 
+L 415.272321 380.082562 
+L 380.381488 380.082562 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #b3b1a9; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_81">
+    <path d="M 442.686547 384.635031 
+L 477.57738 384.635031 
+L 477.57738 384.405053 
+L 442.686547 384.405053 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #b3b1a9; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_82">
+    <path d="M 504.991606 400.166902 
+L 539.882439 400.166902 
+L 539.882439 395.488361 
+L 504.991606 395.488361 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #b3b1a9; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_83">
+    <path d="M 567.296665 358.765204 
+L 602.187498 358.765204 
+L 602.187498 328.988511 
+L 567.296665 328.988511 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #b3b1a9; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_84">
+    <path d="M 629.601724 403.800842 
+L 664.492557 403.800842 
+L 664.492557 411.930449 
+L 629.601724 411.930449 
+z
+" clip-path="url(#f3-p13f1ac5967)" style="fill: #b3b1a9; stroke: #fcfcfb; stroke-width: 1.4; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-patch_85">
+    <path d="M 39.074375 481.384 
+L 694.274375 481.384 
+" style="fill: none; stroke: #c3c2b7; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="f3-text_32">
+    <text style="font-size: 8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; fill: #52514e" transform="translate(181.843603 323.156326)">US news largest</text>
+    <text style="font-size: 8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; fill: #52514e" transform="translate(179.420478 334.591201)">in 90% of models</text>
+   </g>
+   <g id="f3-text_33">
+    <text style="font-size: 8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; fill: #52514e" transform="translate(555.673956 309.457357)">US news largest</text>
+    <text style="font-size: 8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; fill: #52514e" transform="translate(553.250831 320.892232)">in 90% of models</text>
+   </g>
+   <g id="f3-line2d_51">
+    <path d="M 39.074375 403.800842 
+L 694.274375 403.800842 
+" clip-path="url(#f3-p13f1ac5967)" style="fill: none; stroke: #52514e; stroke-linecap: round"/>
+   </g>
+   <g id="f3-text_34">
+    <text style="font-weight: 700; font-size: 10.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="39.074375" y="281.426105" transform="rotate(-0 39.074375 281.426105)">2-year yield, change in month</text>
+   </g>
+   <g id="f3-line2d_52">
+    <g clip-path="url(#f3-p13f1ac5967)">
+     <use xlink:href="#f3-me0a9e797cf" x="86.30161" y="394.102947" style="fill: #0b0b0b; stroke: #fcfcfb; stroke-width: 1.6"/>
+     <use xlink:href="#f3-me0a9e797cf" x="148.606669" y="423.196632" style="fill: #0b0b0b; stroke: #fcfcfb; stroke-width: 1.6"/>
+     <use xlink:href="#f3-me0a9e797cf" x="210.911728" y="346.998887" style="fill: #0b0b0b; stroke: #fcfcfb; stroke-width: 1.6"/>
+     <use xlink:href="#f3-me0a9e797cf" x="273.216787" y="391.33212" style="fill: #0b0b0b; stroke: #fcfcfb; stroke-width: 1.6"/>
+     <use xlink:href="#f3-me0a9e797cf" x="335.521846" y="389.946707" style="fill: #0b0b0b; stroke: #fcfcfb; stroke-width: 1.6"/>
+     <use xlink:href="#f3-me0a9e797cf" x="397.826904" y="381.634226" style="fill: #0b0b0b; stroke: #fcfcfb; stroke-width: 1.6"/>
+     <use xlink:href="#f3-me0a9e797cf" x="460.131963" y="384.405053" style="fill: #0b0b0b; stroke: #fcfcfb; stroke-width: 1.6"/>
+     <use xlink:href="#f3-me0a9e797cf" x="522.437022" y="395.488361" style="fill: #0b0b0b; stroke: #fcfcfb; stroke-width: 1.6"/>
+     <use xlink:href="#f3-me0a9e797cf" x="584.742081" y="328.988511" style="fill: #0b0b0b; stroke: #fcfcfb; stroke-width: 1.6"/>
+     <use xlink:href="#f3-me0a9e797cf" x="647.04714" y="409.342496" style="fill: #0b0b0b; stroke: #fcfcfb; stroke-width: 1.6"/>
+    </g>
+   </g>
+  </g>
+  <g id="f3-legend_1">
+   <g id="f3-patch_86">
+    <path d="M 39.794375 15.4976 
+L 51.234375 15.4976 
+L 51.234375 9.3376 
+L 39.794375 9.3376 
+z
+" style="fill: #2a78d6; stroke: #2a78d6; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-text_35">
+    <text style="font-size: 8.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="58.274375" y="15.4976" transform="rotate(-0 58.274375 15.4976)">US news</text>
+   </g>
+   <g id="f3-patch_87">
+    <path d="M 104.90475 15.4976 
+L 116.34475 15.4976 
+L 116.34475 9.3376 
+L 104.90475 9.3376 
+z
+" style="fill: #eb6834; stroke: #eb6834; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-text_36">
+    <text style="font-size: 8.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="123.38475" y="15.4976" transform="rotate(-0 123.38475 15.4976)">Global risk sentiment</text>
+   </g>
+   <g id="f3-patch_88">
+    <path d="M 217.79225 15.4976 
+L 229.23225 15.4976 
+L 229.23225 9.3376 
+L 217.79225 9.3376 
+z
+" style="fill: #1baf7a; stroke: #1baf7a; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-text_37">
+    <text style="font-size: 8.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="236.27225" y="15.4976" transform="rotate(-0 236.27225 15.4976)">Euro-area news</text>
+   </g>
+   <g id="f3-patch_89">
+    <path d="M 309.31225 15.4976 
+L 320.75225 15.4976 
+L 320.75225 9.3376 
+L 309.31225 9.3376 
+z
+" style="fill: #b3b1a9; stroke: #b3b1a9; stroke-linejoin: miter"/>
+   </g>
+   <g id="f3-text_38">
+    <text style="font-size: 8.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="327.79225" y="15.4976" transform="rotate(-0 327.79225 15.4976)">Unspanned (curve-specific news)</text>
+   </g>
+   <g id="f3-line2d_53">
+    <defs>
+     <path id="f3-m5bcdc27597" d="M 0 3.5 
+C 0.928211 3.5 1.81853 3.131218 2.474874 2.474874 
+C 3.131218 1.81853 3.5 0.928211 3.5 0 
+C 3.5 -0.928211 3.131218 -1.81853 2.474874 -2.474874 
+C 1.81853 -3.131218 0.928211 -3.5 0 -3.5 
+C -0.928211 -3.5 -1.81853 -3.131218 -2.474874 -2.474874 
+C -3.131218 -1.81853 -3.5 -0.928211 -3.5 0 
+C -3.5 0.928211 -3.131218 1.81853 -2.474874 2.474874 
+C -1.81853 3.131218 -0.928211 3.5 0 3.5 
+z
+" style="stroke: #0b0b0b"/>
+    </defs>
+    <g>
+     <use xlink:href="#f3-m5bcdc27597" x="475.8165" y="12.4176" style="fill: #0b0b0b; stroke: #0b0b0b"/>
+    </g>
+   </g>
+   <g id="f3-text_39">
+    <text style="font-size: 8.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="488.5765" y="15.4976" transform="rotate(-0 488.5765 15.4976)">Actual change</text>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="f3-pa99a4a6c58">
+   <rect x="39.074375" y="39.16" width="655.2" height="193.957895"/>
+  </clipPath>
+  <clipPath id="f3-p13f1ac5967">
+   <rect x="39.074375" y="287.426105" width="655.2" height="193.957895"/>
+  </clipPath>
+ </defs>
+</svg>
+</div>
+  <figcaption>Monthly contributions in the median-target model (January from the 30 December close, October to the 5th); dots are actual monthly changes. Percentages give the share of admissible models in which US news is the largest of the three origins.</figcaption>
+</figure>
+<details class="tableview"><summary>Table: monthly contributions, bp (median-target model), and the share of admissible models in which each origin is the largest</summary><div class="tablewrap"><table><thead><tr><th scope="col">Month</th><th scope="col" class=num>Actual</th><th scope="col" class=num>US news</th><th scope="col" class=num>Global risk</th><th scope="col" class=num>Euro area</th><th scope="col" class=num>Unspanned</th><th scope="col" class=num>US largest</th><th scope="col" class=num>Global largest</th><th scope="col" class=num>Euro area largest</th></tr></thead><tbody><tr><th scope="row">10-year, Jan</th><td class="num">+12</td><td class="num">0</td><td class="num">+11</td><td class="num">−1</td><td class="num">+1</td><td class="num">17%</td><td class="num">63%</td><td class="num">20%</td></tr><tr><th scope="row">10-year, Feb</th><td class="num">−29</td><td class="num">−16</td><td class="num">−6</td><td class="num">−5</td><td class="num">−2</td><td class="num">50%</td><td class="num">38%</td><td class="num">12%</td></tr><tr><th scope="row">10-year, Mar</th><td class="num">+33</td><td class="num">+38</td><td class="num">−8</td><td class="num">+4</td><td class="num">−1</td><td class="num">87%</td><td class="num">2%</td><td class="num">11%</td></tr><tr><th scope="row">10-year, Apr</th><td class="num">+10</td><td class="num">−5</td><td class="num">+11</td><td class="num">+1</td><td class="num">+3</td><td class="num">22%</td><td class="num">62%</td><td class="num">16%</td></tr><tr><th scope="row">10-year, May</th><td class="num">+5</td><td class="num">+2</td><td class="num">+6</td><td class="num">−1</td><td class="num">−2</td><td class="num">23%</td><td class="num">54%</td><td class="num">23%</td></tr><tr><th scope="row">10-year, Jun</th><td class="num">−1</td><td class="num">+10</td><td class="num">−1</td><td class="num">−5</td><td class="num">−4</td><td class="num">45%</td><td class="num">29%</td><td class="num">27%</td></tr><tr><th scope="row">10-year, Jul</th><td class="num">+31</td><td class="num">+20</td><td class="num">+4</td><td class="num">+1</td><td class="num">+6</td><td class="num">65%</td><td class="num">16%</td><td class="num">19%</td></tr><tr><th scope="row">10-year, Aug</th><td class="num">0</td><td class="num">+2</td><td class="num">+1</td><td class="num">+1</td><td class="num">−3</td><td class="num">45%</td><td class="num">25%</td><td class="num">30%</td></tr><tr><th scope="row">10-year, Sep</th><td class="num">+54</td><td class="num">+46</td><td class="num">+1</td><td class="num">+3</td><td class="num">+4</td><td class="num">86%</td><td class="num">10%</td><td class="num">5%</td></tr><tr><th scope="row">10-year, Oct</th><td class="num">+2</td><td class="num">0</td><td class="num">+1</td><td class="num">+1</td><td class="num">0</td><td class="num">30%</td><td class="num">27%</td><td class="num">43%</td></tr><tr><th scope="row">2-year, Jan</th><td class="num">+7</td><td class="num">−1</td><td class="num">+5</td><td class="num">0</td><td class="num">+4</td><td class="num">21%</td><td class="num">57%</td><td class="num">21%</td></tr><tr><th scope="row">2-year, Feb</th><td class="num">−14</td><td class="num">−13</td><td class="num">−2</td><td class="num">−1</td><td class="num">+2</td><td class="num">58%</td><td class="num">29%</td><td class="num">13%</td></tr><tr><th scope="row">2-year, Mar</th><td class="num">+41</td><td class="num">+24</td><td class="num">−3</td><td class="num">+1</td><td class="num">+19</td><td class="num">90%</td><td class="num">2%</td><td class="num">8%</td></tr><tr><th scope="row">2-year, Apr</th><td class="num">+9</td><td class="num">+1</td><td class="num">+5</td><td class="num">0</td><td class="num">+3</td><td class="num">28%</td><td class="num">51%</td><td class="num">21%</td></tr><tr><th scope="row">2-year, May</th><td class="num">+10</td><td class="num">+3</td><td class="num">+2</td><td class="num">0</td><td class="num">+5</td><td class="num">33%</td><td class="num">41%</td><td class="num">26%</td></tr><tr><th scope="row">2-year, Jun</th><td class="num">+16</td><td class="num">+4</td><td class="num">0</td><td class="num">−1</td><td class="num">+13</td><td class="num">52%</td><td class="num">20%</td><td class="num">28%</td></tr><tr><th scope="row">2-year, Jul</th><td class="num">+14</td><td class="num">+12</td><td class="num">+1</td><td class="num">0</td><td class="num">0</td><td class="num">70%</td><td class="num">12%</td><td class="num">17%</td></tr><tr><th scope="row">2-year, Aug</th><td class="num">+6</td><td class="num">+2</td><td class="num">0</td><td class="num">0</td><td class="num">+3</td><td class="num">54%</td><td class="num">18%</td><td class="num">28%</td></tr><tr><th scope="row">2-year, Sep</th><td class="num">+54</td><td class="num">+31</td><td class="num">+1</td><td class="num">+1</td><td class="num">+21</td><td class="num">90%</td><td class="num">6%</td><td class="num">4%</td></tr><tr><th scope="row">2-year, Oct</th><td class="num">−4</td><td class="num">+1</td><td class="num">+1</td><td class="num">0</td><td class="num">−6</td><td class="num">35%</td><td class="num">21%</td><td class="num">44%</td></tr></tbody></table></div></details>
+
+<h2 id="uncertainty">4. How certain is the attribution?</h2>
+<p>Sign restrictions identify a set of models, not one: 1,000 rotations of the reduced form satisfy the restrictions and each is an equally admissible account of the same data. Figure 4 sorts the results by how much they depend on which rotation is right.</p>
+<ul>
+<li><strong>Identification-free.</strong> How much of a move is spanned by the cross-asset shocks does not depend on the restrictions at all. The 10-year's unspanned part is −2bp (−25 to 25), the 2-year's 61bp (44–80).</li>
+<li><strong>Robust in sign.</strong> US news raised yields at every maturity in every admissible model. It is the largest of the three origins in 80% of models at the 10-year and 88% at the 2-year, and accounts for more than half of the 10-year's rise in 72%.</li>
+<li><strong>Weakly identified.</strong> The remainder is split between global risk sentiment (median 24bp, −2 to 74) and euro-area news (median 11bp, −1 to 47) in proportions the data do not pin down. The representative model's zero for euro-area news lies at the bottom of the set, so "no euro-area contribution" is not a robust finding.</li>
+<li><strong>Not pinned down.</strong> US macro news exceeds US monetary news in 53% of models. The two shocks differ only in the sign of the US equity response, and the data cannot tell whether the US news of 2026 was mainly about growth or about policy.</li>
+</ul>
+
+<figure>
+  <div class="figtitle"><span class="fignum">Figure 4</span>What the data pin down: the front-end gap and the US origin, not macro versus monetary</div>
+  <div class="chart"><svg role="img" preserveAspectRatio="xMidYMid meet" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 708.387678 392.2005" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="f4-figure_1">
+  <g id="f4-patch_1">
+   <path d="M -0 392.2005 
+L 708.387678 392.2005 
+L 708.387678 0 
+L -0 0 
+z
+" style="fill: #fcfcfb"/>
+  </g>
+  <g id="f4-axes_1">
+   <g id="f4-patch_2">
+    <path d="M 148.386812 358.048 
+L 397.617582 358.048 
+L 397.617582 51.616 
+L 148.386812 51.616 
+z
+" style="fill: #fcfcfb"/>
+   </g>
+   <g id="f4-matplotlib.axis_1">
+    <g id="f4-xtick_1">
+     <g id="f4-line2d_1">
+      <path d="M 160.848351 358.048 
+L 160.848351 51.616 
+" clip-path="url(#f4-p91a1d00b9c)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f4-line2d_2"/>
+     <g id="f4-text_1">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="160.848351" y="371.616" transform="rotate(-0 160.848351 371.616)">−25</text>
+     </g>
+    </g>
+    <g id="f4-xtick_2">
+     <g id="f4-line2d_3">
+      <path d="M 192.002197 358.048 
+L 192.002197 51.616 
+" clip-path="url(#f4-p91a1d00b9c)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f4-line2d_4"/>
+     <g id="f4-text_2">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="192.002197" y="371.616" transform="rotate(-0 192.002197 371.616)">0</text>
+     </g>
+    </g>
+    <g id="f4-xtick_3">
+     <g id="f4-line2d_5">
+      <path d="M 223.156043 358.048 
+L 223.156043 51.616 
+" clip-path="url(#f4-p91a1d00b9c)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f4-line2d_6"/>
+     <g id="f4-text_3">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="223.156043" y="371.616" transform="rotate(-0 223.156043 371.616)">25</text>
+     </g>
+    </g>
+    <g id="f4-xtick_4">
+     <g id="f4-line2d_7">
+      <path d="M 254.309889 358.048 
+L 254.309889 51.616 
+" clip-path="url(#f4-p91a1d00b9c)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f4-line2d_8"/>
+     <g id="f4-text_4">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="254.309889" y="371.616" transform="rotate(-0 254.309889 371.616)">50</text>
+     </g>
+    </g>
+    <g id="f4-xtick_5">
+     <g id="f4-line2d_9">
+      <path d="M 285.463736 358.048 
+L 285.463736 51.616 
+" clip-path="url(#f4-p91a1d00b9c)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f4-line2d_10"/>
+     <g id="f4-text_5">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="285.463736" y="371.616" transform="rotate(-0 285.463736 371.616)">75</text>
+     </g>
+    </g>
+    <g id="f4-xtick_6">
+     <g id="f4-line2d_11">
+      <path d="M 316.617582 358.048 
+L 316.617582 51.616 
+" clip-path="url(#f4-p91a1d00b9c)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f4-line2d_12"/>
+     <g id="f4-text_6">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="316.617582" y="371.616" transform="rotate(-0 316.617582 371.616)">100</text>
+     </g>
+    </g>
+    <g id="f4-xtick_7">
+     <g id="f4-line2d_13">
+      <path d="M 347.771428 358.048 
+L 347.771428 51.616 
+" clip-path="url(#f4-p91a1d00b9c)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f4-line2d_14"/>
+     <g id="f4-text_7">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="347.771428" y="371.616" transform="rotate(-0 347.771428 371.616)">125</text>
+     </g>
+    </g>
+    <g id="f4-xtick_8">
+     <g id="f4-line2d_15">
+      <path d="M 378.925274 358.048 
+L 378.925274 51.616 
+" clip-path="url(#f4-p91a1d00b9c)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f4-line2d_16"/>
+     <g id="f4-text_8">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="378.925274" y="371.616" transform="rotate(-0 378.925274 371.616)">150</text>
+     </g>
+    </g>
+    <g id="f4-text_9">
+     <text style="font-size: 9.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="273.002197" y="386.577" transform="rotate(-0 273.002197 386.577)">bp</text>
+    </g>
+   </g>
+   <g id="f4-matplotlib.axis_2">
+    <g id="f4-ytick_1">
+     <g id="f4-line2d_17"/>
+     <g id="f4-text_10">
+      <text style="font-size: 9.4px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="143.386812" y="103.728988" transform="rotate(-0 143.386812 103.728988)">All cross-asset shocks</text>
+     </g>
+    </g>
+    <g id="f4-ytick_2">
+     <g id="f4-line2d_18"/>
+     <g id="f4-text_11">
+      <text style="font-size: 9.4px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="143.386812" y="129.479576" transform="rotate(-0 143.386812 129.479576)">Unspanned (curve-specific news)</text>
+     </g>
+    </g>
+    <g id="f4-ytick_3">
+     <g id="f4-line2d_19"/>
+     <g id="f4-text_12">
+      <text style="font-size: 9.4px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="143.386812" y="183.555812" transform="rotate(-0 143.386812 183.555812)">US news</text>
+     </g>
+    </g>
+    <g id="f4-ytick_4">
+     <g id="f4-line2d_20"/>
+     <g id="f4-text_13">
+      <text style="font-size: 9.4px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="143.386812" y="237.632047" transform="rotate(-0 143.386812 237.632047)">Global risk sentiment</text>
+     </g>
+    </g>
+    <g id="f4-ytick_5">
+     <g id="f4-line2d_21"/>
+     <g id="f4-text_14">
+      <text style="font-size: 9.4px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="143.386812" y="263.382635" transform="rotate(-0 143.386812 263.382635)">Euro-area news</text>
+     </g>
+    </g>
+    <g id="f4-ytick_6">
+     <g id="f4-line2d_22"/>
+     <g id="f4-text_15">
+      <text style="font-size: 9.4px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="143.386812" y="317.458871" transform="rotate(-0 143.386812 317.458871)">US macro news</text>
+     </g>
+    </g>
+    <g id="f4-ytick_7">
+     <g id="f4-line2d_23"/>
+     <g id="f4-text_16">
+      <text style="font-size: 9.4px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="143.386812" y="343.209459" transform="rotate(-0 143.386812 343.209459)">US monetary news</text>
+     </g>
+    </g>
+   </g>
+   <g id="f4-line2d_24">
+    <path d="M 192.002197 358.048 
+L 192.002197 51.616 
+" clip-path="url(#f4-p91a1d00b9c)" style="fill: none; stroke: #52514e; stroke-linecap: round"/>
+   </g>
+   <g id="f4-line2d_25">
+    <path d="M 337.802197 358.048 
+L 337.802197 51.616 
+" clip-path="url(#f4-p91a1d00b9c)" style="fill: none; stroke: #0b0b0b; stroke-width: 1.1; stroke-linecap: round"/>
+   </g>
+   <g id="f4-line2d_26">
+    <path d="M 306.806613 99.254588 
+L 369.113059 99.254588 
+" clip-path="url(#f4-p91a1d00b9c)" style="fill: none; stroke: #52514e; stroke-opacity: 0.85; stroke-width: 2.4; stroke-linecap: round"/>
+   </g>
+   <g id="f4-line2d_27">
+    <path d="M 160.691336 125.005176 
+L 222.997782 125.005176 
+" clip-path="url(#f4-p91a1d00b9c)" style="fill: none; stroke: #b3b1a9; stroke-opacity: 0.85; stroke-width: 2.4; stroke-linecap: round"/>
+   </g>
+   <g id="f4-line2d_28">
+    <path d="M 230.873474 179.081412 
+L 340.002905 179.081412 
+" clip-path="url(#f4-p91a1d00b9c)" style="fill: none; stroke: #2a78d6; stroke-opacity: 0.85; stroke-width: 2.4; stroke-linecap: round"/>
+   </g>
+   <g id="f4-line2d_29">
+    <path d="M 189.830151 233.157647 
+L 283.973336 233.157647 
+" clip-path="url(#f4-p91a1d00b9c)" style="fill: none; stroke: #eb6834; stroke-opacity: 0.85; stroke-width: 2.4; stroke-linecap: round"/>
+   </g>
+   <g id="f4-line2d_30">
+    <path d="M 191.096243 258.908235 
+L 250.818166 258.908235 
+" clip-path="url(#f4-p91a1d00b9c)" style="fill: none; stroke: #1baf7a; stroke-opacity: 0.85; stroke-width: 2.4; stroke-linecap: round"/>
+   </g>
+   <g id="f4-line2d_31">
+    <path d="M 196.526982 312.984471 
+L 298.41252 312.984471 
+" clip-path="url(#f4-p91a1d00b9c)" style="fill: none; stroke: #2a78d6; stroke-opacity: 0.85; stroke-width: 2.4; stroke-linecap: round"/>
+   </g>
+   <g id="f4-line2d_32">
+    <path d="M 197.071551 338.735059 
+L 292.981782 338.735059 
+" clip-path="url(#f4-p91a1d00b9c)" style="fill: none; stroke: #2a78d6; stroke-opacity: 0.85; stroke-width: 2.4; stroke-linecap: round"/>
+   </g>
+   <g id="f4-patch_3">
+    <path d="M 148.386812 358.048 
+L 397.617582 358.048 
+" style="fill: none; stroke: #c3c2b7; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="f4-text_17">
+    <text style="font-weight: 700; font-size: 8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #898781" x="143.402197" y="82.973647" transform="rotate(-0 143.402197 82.973647)">IDENTIFICATION-FREE</text>
+   </g>
+   <g id="f4-text_18">
+    <text style="font-weight: 700; font-size: 8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #898781" x="143.402197" y="162.800471" transform="rotate(-0 143.402197 162.800471)">ROBUST IN SIGN</text>
+   </g>
+   <g id="f4-text_19">
+    <text style="font-weight: 700; font-size: 8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #898781" x="143.402197" y="216.876706" transform="rotate(-0 143.402197 216.876706)">WEAKLY IDENTIFIED</text>
+   </g>
+   <g id="f4-text_20">
+    <text style="font-weight: 700; font-size: 8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #898781" x="143.402197" y="296.703529" transform="rotate(-0 143.402197 296.703529)">NOT PINNED DOWN</text>
+   </g>
+   <g id="f4-text_21">
+    <text style="font-weight: 700; font-size: 8.6px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="334.686812" y="63.888106" transform="rotate(-0 334.686812 63.888106)">actual +117</text>
+   </g>
+   <g id="f4-text_22">
+    <text style="font-size: 8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; fill: #52514e" transform="translate(344.98752 175.975412)">largest origin in</text>
+    <text style="font-size: 8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; fill: #52514e" transform="translate(344.98752 187.011787)">80% of models</text>
+   </g>
+   <g id="f4-text_23">
+    <text style="font-size: 8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; fill: #52514e" transform="translate(342.786812 322.593765)">macro &gt; monetary</text>
+    <text style="font-size: 8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; fill: #52514e" transform="translate(342.786812 333.79014)">in 53% of models</text>
+   </g>
+   <g id="f4-text_24">
+    <text style="font-weight: 700; font-size: 10.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="148.386812" y="33.616" transform="rotate(-0 148.386812 33.616)">10-year yield</text>
+   </g>
+   <g id="f4-line2d_33">
+    <path d="M 340.454012 99.254588 
+" clip-path="url(#f4-p91a1d00b9c)" style="fill: none; stroke: #52514e; stroke-width: 1.5; stroke-linecap: round"/>
+    <defs>
+     <path id="f4-m082c394041" d="M 0 4 
+C 1.060812 4 2.078319 3.578535 2.828427 2.828427 
+C 3.578535 2.078319 4 1.060812 4 0 
+C 4 -1.060812 3.578535 -2.078319 2.828427 -2.828427 
+C 2.078319 -3.578535 1.060812 -4 0 -4 
+C -1.060812 -4 -2.078319 -3.578535 -2.828427 -2.828427 
+C -3.578535 -2.078319 -4 -1.060812 -4 0 
+C -4 1.060812 -3.578535 2.078319 -2.828427 2.828427 
+C -2.078319 3.578535 -1.060812 4 0 4 
+z
+" style="stroke: #fcfcfb; stroke-width: 1.8"/>
+    </defs>
+    <g clip-path="url(#f4-p91a1d00b9c)">
+     <use xlink:href="#f4-m082c394041" x="340.454012" y="99.254588" style="fill: #52514e; stroke: #fcfcfb; stroke-width: 1.8"/>
+    </g>
+   </g>
+   <g id="f4-line2d_34">
+    <path d="M 189.350382 125.005176 
+" clip-path="url(#f4-p91a1d00b9c)" style="fill: none; stroke: #b3b1a9; stroke-width: 1.5; stroke-linecap: round"/>
+    <defs>
+     <path id="f4-m50b5ce8f3b" d="M 0 4 
+C 1.060812 4 2.078319 3.578535 2.828427 2.828427 
+C 3.578535 2.078319 4 1.060812 4 0 
+C 4 -1.060812 3.578535 -2.078319 2.828427 -2.828427 
+C 2.078319 -3.578535 1.060812 -4 0 -4 
+C -1.060812 -4 -2.078319 -3.578535 -2.828427 -2.828427 
+C -3.578535 -2.078319 -4 -1.060812 -4 0 
+C -4 1.060812 -3.578535 2.078319 -2.828427 2.828427 
+C -2.078319 3.578535 -1.060812 4 0 4 
+z
+" style="stroke: #fcfcfb; stroke-width: 1.8"/>
+    </defs>
+    <g clip-path="url(#f4-p91a1d00b9c)">
+     <use xlink:href="#f4-m50b5ce8f3b" x="189.350382" y="125.005176" style="fill: #b3b1a9; stroke: #fcfcfb; stroke-width: 1.8"/>
+    </g>
+   </g>
+   <g id="f4-line2d_35">
+    <path d="M 286.395859 179.081412 
+" clip-path="url(#f4-p91a1d00b9c)" style="fill: none; stroke: #2a78d6; stroke-width: 1.5; stroke-linecap: round"/>
+    <defs>
+     <path id="f4-md1126d7b12" d="M 0 4 
+C 1.060812 4 2.078319 3.578535 2.828427 2.828427 
+C 3.578535 2.078319 4 1.060812 4 0 
+C 4 -1.060812 3.578535 -2.078319 2.828427 -2.828427 
+C 2.078319 -3.578535 1.060812 -4 0 -4 
+C -1.060812 -4 -2.078319 -3.578535 -2.828427 -2.828427 
+C -3.578535 -2.078319 -4 -1.060812 -4 0 
+C -4 1.060812 -3.578535 2.078319 -2.828427 2.828427 
+C -2.078319 3.578535 -1.060812 4 0 4 
+z
+" style="stroke: #fcfcfb; stroke-width: 1.8"/>
+    </defs>
+    <g clip-path="url(#f4-p91a1d00b9c)">
+     <use xlink:href="#f4-md1126d7b12" x="286.395859" y="179.081412" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.8"/>
+    </g>
+   </g>
+   <g id="f4-line2d_36">
+    <path d="M 221.729197 233.157647 
+" clip-path="url(#f4-p91a1d00b9c)" style="fill: none; stroke: #eb6834; stroke-width: 1.5; stroke-linecap: round"/>
+    <defs>
+     <path id="f4-m65967ab74e" d="M 0 4 
+C 1.060812 4 2.078319 3.578535 2.828427 2.828427 
+C 3.578535 2.078319 4 1.060812 4 0 
+C 4 -1.060812 3.578535 -2.078319 2.828427 -2.828427 
+C 2.078319 -3.578535 1.060812 -4 0 -4 
+C -1.060812 -4 -2.078319 -3.578535 -2.828427 -2.828427 
+C -3.578535 -2.078319 -4 -1.060812 -4 0 
+C -4 1.060812 -3.578535 2.078319 -2.828427 2.828427 
+C -2.078319 3.578535 -1.060812 4 0 4 
+z
+" style="stroke: #fcfcfb; stroke-width: 1.8"/>
+    </defs>
+    <g clip-path="url(#f4-p91a1d00b9c)">
+     <use xlink:href="#f4-m65967ab74e" x="221.729197" y="233.157647" style="fill: #eb6834; stroke: #fcfcfb; stroke-width: 1.8"/>
+    </g>
+   </g>
+   <g id="f4-line2d_37">
+    <path d="M 206.15352 258.908235 
+" clip-path="url(#f4-p91a1d00b9c)" style="fill: none; stroke: #1baf7a; stroke-width: 1.5; stroke-linecap: round"/>
+    <defs>
+     <path id="f4-m42994453ea" d="M 0 4 
+C 1.060812 4 2.078319 3.578535 2.828427 2.828427 
+C 3.578535 2.078319 4 1.060812 4 0 
+C 4 -1.060812 3.578535 -2.078319 2.828427 -2.828427 
+C 2.078319 -3.578535 1.060812 -4 0 -4 
+C -1.060812 -4 -2.078319 -3.578535 -2.828427 -2.828427 
+C -3.578535 -2.078319 -4 -1.060812 -4 0 
+C -4 1.060812 -3.578535 2.078319 -2.828427 2.828427 
+C -2.078319 3.578535 -1.060812 4 0 4 
+z
+" style="stroke: #fcfcfb; stroke-width: 1.8"/>
+    </defs>
+    <g clip-path="url(#f4-p91a1d00b9c)">
+     <use xlink:href="#f4-m42994453ea" x="206.15352" y="258.908235" style="fill: #1baf7a; stroke: #fcfcfb; stroke-width: 1.8"/>
+    </g>
+   </g>
+   <g id="f4-line2d_38">
+    <path d="M 237.722336 312.984471 
+" clip-path="url(#f4-p91a1d00b9c)" style="fill: none; stroke: #2a78d6; stroke-width: 1.5; stroke-linecap: round"/>
+    <g clip-path="url(#f4-p91a1d00b9c)">
+     <use xlink:href="#f4-md1126d7b12" x="237.722336" y="312.984471" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.8"/>
+    </g>
+   </g>
+   <g id="f4-line2d_39">
+    <path d="M 231.818059 338.735059 
+" clip-path="url(#f4-p91a1d00b9c)" style="fill: none; stroke: #2a78d6; stroke-width: 1.5; stroke-linecap: round"/>
+    <g clip-path="url(#f4-p91a1d00b9c)">
+     <use xlink:href="#f4-md1126d7b12" x="231.818059" y="338.735059" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.8"/>
+    </g>
+   </g>
+   <g id="f4-line2d_40">
+    <path d="M 336.395289 99.254588 
+" clip-path="url(#f4-p91a1d00b9c)" style="fill: none; stroke: #1f77b4; stroke-width: 1.5; stroke-linecap: round"/>
+    <defs>
+     <path id="f4-mfbbc36619c" d="M -0 4.596194 
+L 4.596194 0 
+L 0 -4.596194 
+L -4.596194 -0 
+z
+" style="stroke: #0b0b0b; stroke-width: 1.3; stroke-linejoin: miter"/>
+    </defs>
+    <g clip-path="url(#f4-p91a1d00b9c)">
+     <use xlink:href="#f4-mfbbc36619c" x="336.395289" y="99.254588" style="fill: #fcfcfb; stroke: #0b0b0b; stroke-width: 1.3; stroke-linejoin: miter"/>
+    </g>
+   </g>
+   <g id="f4-line2d_41">
+    <path d="M 193.409105 125.005176 
+" clip-path="url(#f4-p91a1d00b9c)" style="fill: none; stroke: #ff7f0e; stroke-width: 1.5; stroke-linecap: round"/>
+    <g clip-path="url(#f4-p91a1d00b9c)">
+     <use xlink:href="#f4-mfbbc36619c" x="193.409105" y="125.005176" style="fill: #fcfcfb; stroke: #0b0b0b; stroke-width: 1.3; stroke-linejoin: miter"/>
+    </g>
+   </g>
+   <g id="f4-line2d_42">
+    <path d="M 311.951982 179.081412 
+" clip-path="url(#f4-p91a1d00b9c)" style="fill: none; stroke: #2ca02c; stroke-width: 1.5; stroke-linecap: round"/>
+    <g clip-path="url(#f4-p91a1d00b9c)">
+     <use xlink:href="#f4-mfbbc36619c" x="311.951982" y="179.081412" style="fill: #fcfcfb; stroke: #0b0b0b; stroke-width: 1.3; stroke-linejoin: miter"/>
+    </g>
+   </g>
+   <g id="f4-line2d_43">
+    <path d="M 218.288566 233.157647 
+" clip-path="url(#f4-p91a1d00b9c)" style="fill: none; stroke: #d62728; stroke-width: 1.5; stroke-linecap: round"/>
+    <g clip-path="url(#f4-p91a1d00b9c)">
+     <use xlink:href="#f4-mfbbc36619c" x="218.288566" y="233.157647" style="fill: #fcfcfb; stroke: #0b0b0b; stroke-width: 1.3; stroke-linejoin: miter"/>
+    </g>
+   </g>
+   <g id="f4-line2d_44">
+    <path d="M 190.159136 258.908235 
+" clip-path="url(#f4-p91a1d00b9c)" style="fill: none; stroke: #9467bd; stroke-width: 1.5; stroke-linecap: round"/>
+    <g clip-path="url(#f4-p91a1d00b9c)">
+     <use xlink:href="#f4-mfbbc36619c" x="190.159136" y="258.908235" style="fill: #fcfcfb; stroke: #0b0b0b; stroke-width: 1.3; stroke-linejoin: miter"/>
+    </g>
+   </g>
+   <g id="f4-line2d_45">
+    <path d="M 275.818505 312.984471 
+" clip-path="url(#f4-p91a1d00b9c)" style="fill: none; stroke: #8c564b; stroke-width: 1.5; stroke-linecap: round"/>
+    <g clip-path="url(#f4-p91a1d00b9c)">
+     <use xlink:href="#f4-mfbbc36619c" x="275.818505" y="312.984471" style="fill: #fcfcfb; stroke: #0b0b0b; stroke-width: 1.3; stroke-linejoin: miter"/>
+    </g>
+   </g>
+   <g id="f4-line2d_46">
+    <path d="M 228.135674 338.735059 
+" clip-path="url(#f4-p91a1d00b9c)" style="fill: none; stroke: #e377c2; stroke-width: 1.5; stroke-linecap: round"/>
+    <g clip-path="url(#f4-p91a1d00b9c)">
+     <use xlink:href="#f4-mfbbc36619c" x="228.135674" y="338.735059" style="fill: #fcfcfb; stroke: #0b0b0b; stroke-width: 1.3; stroke-linejoin: miter"/>
+    </g>
+   </g>
+  </g>
+  <g id="f4-axes_2">
+   <g id="f4-patch_4">
+    <path d="M 417.556043 358.048 
+L 666.786812 358.048 
+L 666.786812 51.616 
+L 417.556043 51.616 
+z
+" style="fill: #fcfcfb"/>
+   </g>
+   <g id="f4-matplotlib.axis_3">
+    <g id="f4-xtick_9">
+     <g id="f4-line2d_47">
+      <path d="M 430.017582 358.048 
+L 430.017582 51.616 
+" clip-path="url(#f4-pa0505140d4)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f4-line2d_48"/>
+     <g id="f4-text_25">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="430.017582" y="371.616" transform="rotate(-0 430.017582 371.616)">−25</text>
+     </g>
+    </g>
+    <g id="f4-xtick_10">
+     <g id="f4-line2d_49">
+      <path d="M 461.171428 358.048 
+L 461.171428 51.616 
+" clip-path="url(#f4-pa0505140d4)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f4-line2d_50"/>
+     <g id="f4-text_26">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="461.171428" y="371.616" transform="rotate(-0 461.171428 371.616)">0</text>
+     </g>
+    </g>
+    <g id="f4-xtick_11">
+     <g id="f4-line2d_51">
+      <path d="M 492.325274 358.048 
+L 492.325274 51.616 
+" clip-path="url(#f4-pa0505140d4)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f4-line2d_52"/>
+     <g id="f4-text_27">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="492.325274" y="371.616" transform="rotate(-0 492.325274 371.616)">25</text>
+     </g>
+    </g>
+    <g id="f4-xtick_12">
+     <g id="f4-line2d_53">
+      <path d="M 523.47912 358.048 
+L 523.47912 51.616 
+" clip-path="url(#f4-pa0505140d4)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f4-line2d_54"/>
+     <g id="f4-text_28">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="523.47912" y="371.616" transform="rotate(-0 523.47912 371.616)">50</text>
+     </g>
+    </g>
+    <g id="f4-xtick_13">
+     <g id="f4-line2d_55">
+      <path d="M 554.632966 358.048 
+L 554.632966 51.616 
+" clip-path="url(#f4-pa0505140d4)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f4-line2d_56"/>
+     <g id="f4-text_29">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="554.632966" y="371.616" transform="rotate(-0 554.632966 371.616)">75</text>
+     </g>
+    </g>
+    <g id="f4-xtick_14">
+     <g id="f4-line2d_57">
+      <path d="M 585.786812 358.048 
+L 585.786812 51.616 
+" clip-path="url(#f4-pa0505140d4)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f4-line2d_58"/>
+     <g id="f4-text_30">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="585.786812" y="371.616" transform="rotate(-0 585.786812 371.616)">100</text>
+     </g>
+    </g>
+    <g id="f4-xtick_15">
+     <g id="f4-line2d_59">
+      <path d="M 616.940659 358.048 
+L 616.940659 51.616 
+" clip-path="url(#f4-pa0505140d4)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f4-line2d_60"/>
+     <g id="f4-text_31">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="616.940659" y="371.616" transform="rotate(-0 616.940659 371.616)">125</text>
+     </g>
+    </g>
+    <g id="f4-xtick_16">
+     <g id="f4-line2d_61">
+      <path d="M 648.094505 358.048 
+L 648.094505 51.616 
+" clip-path="url(#f4-pa0505140d4)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f4-line2d_62"/>
+     <g id="f4-text_32">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="648.094505" y="371.616" transform="rotate(-0 648.094505 371.616)">150</text>
+     </g>
+    </g>
+    <g id="f4-text_33">
+     <text style="font-size: 9.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="542.171428" y="386.577" transform="rotate(-0 542.171428 386.577)">bp</text>
+    </g>
+   </g>
+   <g id="f4-matplotlib.axis_4">
+    <g id="f4-ytick_8">
+     <g id="f4-line2d_63"/>
+    </g>
+    <g id="f4-ytick_9">
+     <g id="f4-line2d_64"/>
+    </g>
+    <g id="f4-ytick_10">
+     <g id="f4-line2d_65"/>
+    </g>
+    <g id="f4-ytick_11">
+     <g id="f4-line2d_66"/>
+    </g>
+    <g id="f4-ytick_12">
+     <g id="f4-line2d_67"/>
+    </g>
+    <g id="f4-ytick_13">
+     <g id="f4-line2d_68"/>
+    </g>
+    <g id="f4-ytick_14">
+     <g id="f4-line2d_69"/>
+    </g>
+   </g>
+   <g id="f4-line2d_70">
+    <path d="M 461.171428 358.048 
+L 461.171428 51.616 
+" clip-path="url(#f4-pa0505140d4)" style="fill: none; stroke: #52514e; stroke-linecap: round"/>
+   </g>
+   <g id="f4-line2d_71">
+    <path d="M 634.386813 358.048 
+L 634.386813 51.616 
+" clip-path="url(#f4-pa0505140d4)" style="fill: none; stroke: #0b0b0b; stroke-width: 1.1; stroke-linecap: round"/>
+   </g>
+   <g id="f4-line2d_72">
+    <path d="M 534.496366 99.254588 
+L 579.22332 99.254588 
+" clip-path="url(#f4-pa0505140d4)" style="fill: none; stroke: #52514e; stroke-opacity: 0.85; stroke-width: 2.4; stroke-linecap: round"/>
+   </g>
+   <g id="f4-line2d_73">
+    <path d="M 516.33492 125.005176 
+L 561.061874 125.005176 
+" clip-path="url(#f4-pa0505140d4)" style="fill: none; stroke: #b3b1a9; stroke-opacity: 0.85; stroke-width: 2.4; stroke-linecap: round"/>
+   </g>
+   <g id="f4-line2d_74">
+    <path d="M 491.977597 179.081412 
+L 560.230689 179.081412 
+" clip-path="url(#f4-pa0505140d4)" style="fill: none; stroke: #2a78d6; stroke-opacity: 0.85; stroke-width: 2.4; stroke-linecap: round"/>
+   </g>
+   <g id="f4-line2d_75">
+    <path d="M 461.075474 233.157647 
+L 513.491197 233.157647 
+" clip-path="url(#f4-pa0505140d4)" style="fill: none; stroke: #eb6834; stroke-opacity: 0.85; stroke-width: 2.4; stroke-linecap: round"/>
+   </g>
+   <g id="f4-line2d_76">
+    <path d="M 461.119089 258.908235 
+L 499.683813 258.908235 
+" clip-path="url(#f4-pa0505140d4)" style="fill: none; stroke: #1baf7a; stroke-opacity: 0.85; stroke-width: 2.4; stroke-linecap: round"/>
+   </g>
+   <g id="f4-line2d_77">
+    <path d="M 467.810936 312.984471 
+L 535.698905 312.984471 
+" clip-path="url(#f4-pa0505140d4)" style="fill: none; stroke: #2a78d6; stroke-opacity: 0.85; stroke-width: 2.4; stroke-linecap: round"/>
+   </g>
+   <g id="f4-line2d_78">
+    <path d="M 463.84692 338.735059 
+L 524.547074 338.735059 
+" clip-path="url(#f4-pa0505140d4)" style="fill: none; stroke: #2a78d6; stroke-opacity: 0.85; stroke-width: 2.4; stroke-linecap: round"/>
+   </g>
+   <g id="f4-patch_5">
+    <path d="M 417.556043 358.048 
+L 666.786812 358.048 
+" style="fill: none; stroke: #c3c2b7; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="f4-text_34">
+    <text style="font-weight: 700; font-size: 8.6px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="631.271428" y="63.888106" transform="rotate(-0 631.271428 63.888106)">actual +139</text>
+   </g>
+   <g id="f4-text_35">
+    <text style="font-size: 8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; fill: #52514e" transform="translate(639.371428 175.975412)">largest origin in</text>
+    <text style="font-size: 8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; fill: #52514e" transform="translate(639.371428 187.011787)">88% of models</text>
+   </g>
+   <g id="f4-text_36">
+    <text style="font-size: 8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; fill: #52514e" transform="translate(639.371428 322.593765)">macro &gt; monetary</text>
+    <text style="font-size: 8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; fill: #52514e" transform="translate(639.371428 333.79014)">in 62% of models</text>
+   </g>
+   <g id="f4-text_37">
+    <text style="font-weight: 700; font-size: 10.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="417.556043" y="33.616" transform="rotate(-0 417.556043 33.616)">2-year yield</text>
+   </g>
+   <g id="f4-line2d_79">
+    <path d="M 558.626889 99.254588 
+" clip-path="url(#f4-pa0505140d4)" style="fill: none; stroke: #52514e; stroke-width: 1.5; stroke-linecap: round"/>
+    <g clip-path="url(#f4-pa0505140d4)">
+     <use xlink:href="#f4-m082c394041" x="558.626889" y="99.254588" style="fill: #52514e; stroke: #fcfcfb; stroke-width: 1.8"/>
+    </g>
+   </g>
+   <g id="f4-line2d_80">
+    <path d="M 536.931351 125.005176 
+" clip-path="url(#f4-pa0505140d4)" style="fill: none; stroke: #b3b1a9; stroke-width: 1.5; stroke-linecap: round"/>
+    <g clip-path="url(#f4-pa0505140d4)">
+     <use xlink:href="#f4-m50b5ce8f3b" x="536.931351" y="125.005176" style="fill: #b3b1a9; stroke: #fcfcfb; stroke-width: 1.8"/>
+    </g>
+   </g>
+   <g id="f4-line2d_81">
+    <path d="M 527.377089 179.081412 
+" clip-path="url(#f4-pa0505140d4)" style="fill: none; stroke: #2a78d6; stroke-width: 1.5; stroke-linecap: round"/>
+    <g clip-path="url(#f4-pa0505140d4)">
+     <use xlink:href="#f4-md1126d7b12" x="527.377089" y="179.081412" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.8"/>
+    </g>
+   </g>
+   <g id="f4-line2d_82">
+    <path d="M 476.132751 233.157647 
+" clip-path="url(#f4-pa0505140d4)" style="fill: none; stroke: #eb6834; stroke-width: 1.5; stroke-linecap: round"/>
+    <g clip-path="url(#f4-pa0505140d4)">
+     <use xlink:href="#f4-m65967ab74e" x="476.132751" y="233.157647" style="fill: #eb6834; stroke: #fcfcfb; stroke-width: 1.8"/>
+    </g>
+   </g>
+   <g id="f4-line2d_83">
+    <path d="M 470.886443 258.908235 
+" clip-path="url(#f4-pa0505140d4)" style="fill: none; stroke: #1baf7a; stroke-width: 1.5; stroke-linecap: round"/>
+    <g clip-path="url(#f4-pa0505140d4)">
+     <use xlink:href="#f4-m42994453ea" x="470.886443" y="258.908235" style="fill: #1baf7a; stroke: #fcfcfb; stroke-width: 1.8"/>
+    </g>
+   </g>
+   <g id="f4-line2d_84">
+    <path d="M 497.256305 312.984471 
+" clip-path="url(#f4-pa0505140d4)" style="fill: none; stroke: #2a78d6; stroke-width: 1.5; stroke-linecap: round"/>
+    <g clip-path="url(#f4-pa0505140d4)">
+     <use xlink:href="#f4-md1126d7b12" x="497.256305" y="312.984471" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.8"/>
+    </g>
+   </g>
+   <g id="f4-line2d_85">
+    <path d="M 486.048397 338.735059 
+" clip-path="url(#f4-pa0505140d4)" style="fill: none; stroke: #2a78d6; stroke-width: 1.5; stroke-linecap: round"/>
+    <g clip-path="url(#f4-pa0505140d4)">
+     <use xlink:href="#f4-md1126d7b12" x="486.048397" y="338.735059" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.8"/>
+    </g>
+   </g>
+   <g id="f4-line2d_86">
+    <path d="M 553.315782 99.254588 
+" clip-path="url(#f4-pa0505140d4)" style="fill: none; stroke: #1f77b4; stroke-width: 1.5; stroke-linecap: round"/>
+    <g clip-path="url(#f4-pa0505140d4)">
+     <use xlink:href="#f4-mfbbc36619c" x="553.315782" y="99.254588" style="fill: #fcfcfb; stroke: #0b0b0b; stroke-width: 1.3; stroke-linejoin: miter"/>
+    </g>
+   </g>
+   <g id="f4-line2d_87">
+    <path d="M 542.242459 125.005176 
+" clip-path="url(#f4-pa0505140d4)" style="fill: none; stroke: #ff7f0e; stroke-width: 1.5; stroke-linecap: round"/>
+    <g clip-path="url(#f4-pa0505140d4)">
+     <use xlink:href="#f4-mfbbc36619c" x="542.242459" y="125.005176" style="fill: #fcfcfb; stroke: #0b0b0b; stroke-width: 1.3; stroke-linejoin: miter"/>
+    </g>
+   </g>
+   <g id="f4-line2d_88">
+    <path d="M 542.236228 179.081412 
+" clip-path="url(#f4-pa0505140d4)" style="fill: none; stroke: #2ca02c; stroke-width: 1.5; stroke-linecap: round"/>
+    <g clip-path="url(#f4-pa0505140d4)">
+     <use xlink:href="#f4-mfbbc36619c" x="542.236228" y="179.081412" style="fill: #fcfcfb; stroke: #0b0b0b; stroke-width: 1.3; stroke-linejoin: miter"/>
+    </g>
+   </g>
+   <g id="f4-line2d_89">
+    <path d="M 472.699597 233.157647 
+" clip-path="url(#f4-pa0505140d4)" style="fill: none; stroke: #d62728; stroke-width: 1.5; stroke-linecap: round"/>
+    <g clip-path="url(#f4-pa0505140d4)">
+     <use xlink:href="#f4-mfbbc36619c" x="472.699597" y="233.157647" style="fill: #fcfcfb; stroke: #0b0b0b; stroke-width: 1.3; stroke-linejoin: miter"/>
+    </g>
+   </g>
+   <g id="f4-line2d_90">
+    <path d="M 460.722813 258.908235 
+" clip-path="url(#f4-pa0505140d4)" style="fill: none; stroke: #9467bd; stroke-width: 1.5; stroke-linecap: round"/>
+    <g clip-path="url(#f4-pa0505140d4)">
+     <use xlink:href="#f4-mfbbc36619c" x="460.722813" y="258.908235" style="fill: #fcfcfb; stroke: #0b0b0b; stroke-width: 1.3; stroke-linejoin: miter"/>
+    </g>
+   </g>
+   <g id="f4-line2d_91">
+    <path d="M 522.89592 312.984471 
+" clip-path="url(#f4-pa0505140d4)" style="fill: none; stroke: #8c564b; stroke-width: 1.5; stroke-linecap: round"/>
+    <g clip-path="url(#f4-pa0505140d4)">
+     <use xlink:href="#f4-mfbbc36619c" x="522.89592" y="312.984471" style="fill: #fcfcfb; stroke: #0b0b0b; stroke-width: 1.3; stroke-linejoin: miter"/>
+    </g>
+   </g>
+   <g id="f4-line2d_92">
+    <path d="M 480.511736 338.735059 
+" clip-path="url(#f4-pa0505140d4)" style="fill: none; stroke: #e377c2; stroke-width: 1.5; stroke-linecap: round"/>
+    <g clip-path="url(#f4-pa0505140d4)">
+     <use xlink:href="#f4-mfbbc36619c" x="480.511736" y="338.735059" style="fill: #fcfcfb; stroke: #0b0b0b; stroke-width: 1.3; stroke-linejoin: miter"/>
+    </g>
+   </g>
+  </g>
+  <g id="f4-legend_1">
+   <g id="f4-line2d_93">
+    <path d="M 156.306813 12.4176 
+L 165.106813 12.4176 
+L 173.906813 12.4176 
+" style="fill: none; stroke: #52514e; stroke-width: 2.4; stroke-linecap: round"/>
+    <defs>
+     <path id="f4-me3bfc71d28" d="M 0 4 
+C 1.060812 4 2.078319 3.578535 2.828427 2.828427 
+C 3.578535 2.078319 4 1.060812 4 0 
+C 4 -1.060812 3.578535 -2.078319 2.828427 -2.828427 
+C 2.078319 -3.578535 1.060812 -4 0 -4 
+C -1.060812 -4 -2.078319 -3.578535 -2.828427 -2.828427 
+C -3.578535 -2.078319 -4 -1.060812 -4 0 
+C -4 1.060812 -3.578535 2.078319 -2.828427 2.828427 
+C -2.078319 3.578535 -1.060812 4 0 4 
+z
+" style="stroke: #52514e"/>
+    </defs>
+    <g>
+     <use xlink:href="#f4-me3bfc71d28" x="165.106813" y="12.4176" style="fill: #52514e; stroke: #52514e"/>
+    </g>
+   </g>
+   <g id="f4-text_38">
+    <text style="font-size: 8.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="180.946813" y="15.4976" transform="rotate(-0 180.946813 15.4976)">Median and 5–95% across the 1,000 admissible models</text>
+   </g>
+   <g id="f4-line2d_94">
+    <g>
+     <use xlink:href="#f4-mfbbc36619c" x="427.755188" y="12.4176" style="fill: #fcfcfb; stroke: #0b0b0b; stroke-width: 1.3; stroke-linejoin: miter"/>
+    </g>
+   </g>
+   <g id="f4-text_39">
+    <text style="font-size: 8.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="443.595188" y="15.4976" transform="rotate(-0 443.595188 15.4976)">Median-target model</text>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="f4-p91a1d00b9c">
+   <rect x="148.386812" y="51.616" width="249.230769" height="306.432"/>
+  </clipPath>
+  <clipPath id="f4-pa0505140d4">
+   <rect x="417.556043" y="51.616" width="249.230769" height="306.432"/>
+  </clipPath>
+ </defs>
+</svg>
+</div>
+  <figcaption>Contributions to the change between 30 December 2025 and 5 October 2026 across the 1,000 admissible models: dot = median, line = 5–95% range, open diamond = the median-target model used in Figures 1–3.</figcaption>
+</figure>
+<details class="tableview"><summary>Table: contributions across the 1,000 admissible models, bp</summary><div class="tablewrap"><table><thead><tr><th scope="col">Contribution, 30 Dec 2025 to 5 Oct 2026</th><th scope="col" class=num>Median</th><th scope="col" class=num>5–95%</th><th scope="col" class=num>Median-target model</th></tr></thead><tbody><tr><th scope="row">10-year: All cross-asset shocks</th><td class="num">+119</td><td class="num">92–142</td><td class="num">+116</td></tr><tr><th scope="row">10-year: Unspanned (curve-specific news)</th><td class="num">−2</td><td class="num">−25 to 25</td><td class="num">+1</td></tr><tr><th scope="row">10-year: US news</th><td class="num">+76</td><td class="num">31–119</td><td class="num">+96</td></tr><tr><th scope="row">10-year: Global risk sentiment</th><td class="num">+24</td><td class="num">−2 to 74</td><td class="num">+21</td></tr><tr><th scope="row">10-year: Euro-area news</th><td class="num">+11</td><td class="num">−1 to 47</td><td class="num">−1</td></tr><tr><th scope="row">10-year: US macro news</th><td class="num">+37</td><td class="num">4–85</td><td class="num">+67</td></tr><tr><th scope="row">10-year: US monetary news</th><td class="num">+32</td><td class="num">4–81</td><td class="num">+29</td></tr><tr><th scope="row">2-year: All cross-asset shocks</th><td class="num">+78</td><td class="num">59–95</td><td class="num">+74</td></tr><tr><th scope="row">2-year: Unspanned (curve-specific news)</th><td class="num">+61</td><td class="num">44–80</td><td class="num">+65</td></tr><tr><th scope="row">2-year: US news</th><td class="num">+53</td><td class="num">25–79</td><td class="num">+65</td></tr><tr><th scope="row">2-year: Global risk sentiment</th><td class="num">+12</td><td class="num">0–42</td><td class="num">+9</td></tr><tr><th scope="row">2-year: Euro-area news</th><td class="num">+8</td><td class="num">0–31</td><td class="num">0</td></tr><tr><th scope="row">2-year: US macro news</th><td class="num">+29</td><td class="num">5–60</td><td class="num">+50</td></tr><tr><th scope="row">2-year: US monetary news</th><td class="num">+20</td><td class="num">2–51</td><td class="num">+16</td></tr></tbody></table></div></details>
+
+<h2 id="forecasting">5. Does knowing the cause predict what happens next?</h2>
+<p>No. The loadings frozen at end-2025 explain 59%–92% of the daily variance of 2026 yield changes, as much as in 2007–2025, so the structure was stable through the selloff. But in real-time forecasts over 2012–2025, with the VAR, the identification and the loadings re-estimated each year on past data only, adding the origin of today's news to the day's own move and the state of the curve never improves forecasts of the change over the next 1, 5 or 20 days (Clark–West p ≥ 0.11 at every maturity and horizon), and no specification beats a no-change forecast. 2026 gives the same answer.</p>
+<p>One apparent exception is an artefact. Measured from the same close, today's news "predicts" tomorrow's 10-year H.15 change (out-of-sample R² +1.3%, p &lt; 0.001). H.15 yields are recorded earlier in the New York afternoon than the market prices the model uses, so tomorrow's H.15 change contains the end of today's news. The effect disappears when the forecast starts at the next close, and it is not tradeable.</p>
+<p class="callout">The decomposition is an attribution and state-classification tool, not a forecasting model. It says what kind of news moved yields, robustly at the level of origin, and nothing about where yields go next.</p>
+
+<figure>
+  <div class="figtitle"><span class="fignum">Figure 5</span>The decomposition explains each day&#x27;s move but says nothing about the next</div>
+  <div class="chart"><svg role="img" preserveAspectRatio="xMidYMid meet" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 706.775554 384.486" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="f5-figure_1">
+  <g id="f5-patch_1">
+   <path d="M 0 384.486 
+L 706.775554 384.486 
+L 706.775554 0 
+L 0 0 
+z
+" style="fill: #fcfcfb"/>
+  </g>
+  <g id="f5-axes_1">
+   <g id="f5-patch_2">
+    <path d="M 41.3165 350.3335 
+L 257.474368 350.3335 
+L 257.474368 35.8375 
+L 41.3165 35.8375 
+z
+" style="fill: #fcfcfb"/>
+   </g>
+   <g id="f5-matplotlib.axis_1">
+    <g id="f5-xtick_1">
+     <g id="f5-line2d_1">
+      <path d="M 41.3165 350.3335 
+L 41.3165 35.8375 
+" clip-path="url(#f5-p1b1b160744)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f5-line2d_2"/>
+     <g id="f5-text_1">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="41.3165" y="363.9015" transform="rotate(-0 41.3165 363.9015)">0</text>
+     </g>
+    </g>
+    <g id="f5-xtick_2">
+     <g id="f5-line2d_3">
+      <path d="M 81.345735 350.3335 
+L 81.345735 35.8375 
+" clip-path="url(#f5-p1b1b160744)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f5-line2d_4"/>
+     <g id="f5-text_2">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="81.345735" y="363.9015" transform="rotate(-0 81.345735 363.9015)">20</text>
+     </g>
+    </g>
+    <g id="f5-xtick_3">
+     <g id="f5-line2d_5">
+      <path d="M 121.37497 350.3335 
+L 121.37497 35.8375 
+" clip-path="url(#f5-p1b1b160744)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f5-line2d_6"/>
+     <g id="f5-text_3">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="121.37497" y="363.9015" transform="rotate(-0 121.37497 363.9015)">40</text>
+     </g>
+    </g>
+    <g id="f5-xtick_4">
+     <g id="f5-line2d_7">
+      <path d="M 161.404205 350.3335 
+L 161.404205 35.8375 
+" clip-path="url(#f5-p1b1b160744)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f5-line2d_8"/>
+     <g id="f5-text_4">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="161.404205" y="363.9015" transform="rotate(-0 161.404205 363.9015)">60</text>
+     </g>
+    </g>
+    <g id="f5-xtick_5">
+     <g id="f5-line2d_9">
+      <path d="M 201.433439 350.3335 
+L 201.433439 35.8375 
+" clip-path="url(#f5-p1b1b160744)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f5-line2d_10"/>
+     <g id="f5-text_5">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="201.433439" y="363.9015" transform="rotate(-0 201.433439 363.9015)">80</text>
+     </g>
+    </g>
+    <g id="f5-xtick_6">
+     <g id="f5-line2d_11">
+      <path d="M 241.462674 350.3335 
+L 241.462674 35.8375 
+" clip-path="url(#f5-p1b1b160744)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f5-line2d_12"/>
+     <g id="f5-text_6">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="241.462674" y="363.9015" transform="rotate(-0 241.462674 363.9015)">100</text>
+     </g>
+    </g>
+    <g id="f5-text_7">
+     <text style="font-size: 9.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="149.395434" y="378.8625" transform="rotate(-0 149.395434 378.8625)">Daily R², %</text>
+    </g>
+   </g>
+   <g id="f5-matplotlib.axis_2">
+    <g id="f5-ytick_1">
+     <g id="f5-line2d_13"/>
+     <g id="f5-text_8">
+      <text style="font-size: 9.6px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="36.3165" y="82.125957" transform="rotate(-0 36.3165 82.125957)">2-year</text>
+     </g>
+    </g>
+    <g id="f5-ytick_2">
+     <g id="f5-line2d_14"/>
+     <g id="f5-text_9">
+      <text style="font-size: 9.6px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="36.3165" y="159.145386" transform="rotate(-0 36.3165 159.145386)">5-year</text>
+     </g>
+    </g>
+    <g id="f5-ytick_3">
+     <g id="f5-line2d_15"/>
+     <g id="f5-text_10">
+      <text style="font-size: 9.6px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="36.3165" y="236.164814" transform="rotate(-0 36.3165 236.164814)">10-year</text>
+     </g>
+    </g>
+    <g id="f5-ytick_4">
+     <g id="f5-line2d_16"/>
+     <g id="f5-text_11">
+      <text style="font-size: 9.6px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="36.3165" y="313.184243" transform="rotate(-0 36.3165 313.184243)">30-year</text>
+     </g>
+    </g>
+   </g>
+   <g id="f5-patch_3">
+    <path d="M 41.3165 77.556357 
+L 145.072277 77.556357 
+L 145.072277 55.734186 
+L 41.3165 55.734186 
+z
+" clip-path="url(#f5-p1b1b160744)" style="fill: #86b6ef; stroke: #fcfcfb; stroke-width: 1.2; stroke-linejoin: miter"/>
+   </g>
+   <g id="f5-patch_4">
+    <path d="M 41.3165 154.575786 
+L 203.194726 154.575786 
+L 203.194726 132.753614 
+L 41.3165 132.753614 
+z
+" clip-path="url(#f5-p1b1b160744)" style="fill: #86b6ef; stroke: #fcfcfb; stroke-width: 1.2; stroke-linejoin: miter"/>
+   </g>
+   <g id="f5-patch_5">
+    <path d="M 41.3165 231.595214 
+L 223.909855 231.595214 
+L 223.909855 209.773043 
+L 41.3165 209.773043 
+z
+" clip-path="url(#f5-p1b1b160744)" style="fill: #86b6ef; stroke: #fcfcfb; stroke-width: 1.2; stroke-linejoin: miter"/>
+   </g>
+   <g id="f5-patch_6">
+    <path d="M 41.3165 308.614643 
+L 202.133951 308.614643 
+L 202.133951 286.792471 
+L 41.3165 286.792471 
+z
+" clip-path="url(#f5-p1b1b160744)" style="fill: #86b6ef; stroke: #fcfcfb; stroke-width: 1.2; stroke-linejoin: miter"/>
+   </g>
+   <g id="f5-patch_7">
+    <path d="M 41.3165 99.378529 
+L 159.00245 99.378529 
+L 159.00245 77.556357 
+L 41.3165 77.556357 
+z
+" clip-path="url(#f5-p1b1b160744)" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.2; stroke-linejoin: miter"/>
+   </g>
+   <g id="f5-patch_8">
+    <path d="M 41.3165 176.397957 
+L 208.278438 176.397957 
+L 208.278438 154.575786 
+L 41.3165 154.575786 
+z
+" clip-path="url(#f5-p1b1b160744)" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.2; stroke-linejoin: miter"/>
+   </g>
+   <g id="f5-patch_9">
+    <path d="M 41.3165 253.417386 
+L 224.970629 253.417386 
+L 224.970629 231.595214 
+L 41.3165 231.595214 
+z
+" clip-path="url(#f5-p1b1b160744)" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.2; stroke-linejoin: miter"/>
+   </g>
+   <g id="f5-patch_10">
+    <path d="M 41.3165 330.436814 
+L 201.693629 330.436814 
+L 201.693629 308.614643 
+L 41.3165 308.614643 
+z
+" clip-path="url(#f5-p1b1b160744)" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.2; stroke-linejoin: miter"/>
+   </g>
+   <g id="f5-patch_11">
+    <path d="M 41.3165 350.3335 
+L 257.474368 350.3335 
+" style="fill: none; stroke: #c3c2b7; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="f5-text_12">
+    <text style="font-size: 8.4px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #52514e" x="148.074469" y="69.749071" transform="rotate(-0 148.074469 69.749071)">52%</text>
+   </g>
+   <g id="f5-text_13">
+    <text style="font-weight: 700; font-size: 8.4px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="162.004643" y="91.651043" transform="rotate(-0 162.004643 91.651043)">59%</text>
+   </g>
+   <g id="f5-text_14">
+    <text style="font-size: 8.4px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #52514e" x="206.196918" y="146.7685" transform="rotate(-0 206.196918 146.7685)">81%</text>
+   </g>
+   <g id="f5-text_15">
+    <text style="font-weight: 700; font-size: 8.4px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="211.280631" y="168.670471" transform="rotate(-0 211.280631 168.670471)">83%</text>
+   </g>
+   <g id="f5-text_16">
+    <text style="font-size: 8.4px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #52514e" x="226.912047" y="223.787929" transform="rotate(-0 226.912047 223.787929)">91%</text>
+   </g>
+   <g id="f5-text_17">
+    <text style="font-weight: 700; font-size: 8.4px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="227.972822" y="245.6899" transform="rotate(-0 227.972822 245.6899)">92%</text>
+   </g>
+   <g id="f5-text_18">
+    <text style="font-size: 8.4px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #52514e" x="205.136144" y="300.807357" transform="rotate(-0 205.136144 300.807357)">80%</text>
+   </g>
+   <g id="f5-text_19">
+    <text style="font-weight: 700; font-size: 8.4px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="204.695822" y="322.709329" transform="rotate(-0 204.695822 322.709329)">80%</text>
+   </g>
+   <g id="f5-text_20">
+    <text style="font-weight: 700; font-size: 10.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="41.3165" y="13.8375" transform="rotate(-0 41.3165 13.8375)">Explains the day</text>
+   </g>
+   <g id="f5-legend_1">
+    <g id="f5-patch_12">
+     <path d="M 48.8765 26.4883 
+L 58.9565 26.4883 
+L 58.9565 20.6083 
+L 48.8765 20.6083 
+z
+" style="fill: #86b6ef; stroke: #86b6ef; stroke-linejoin: miter"/>
+    </g>
+    <g id="f5-text_21">
+     <text style="font-size: 8.4px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="62.3165" y="26.4883" transform="rotate(-0 62.3165 26.4883)">2007–2025, in sample</text>
+    </g>
+    <g id="f5-patch_13">
+     <path d="M 153.048313 26.4883 
+L 163.128313 26.4883 
+L 163.128313 20.6083 
+L 153.048313 20.6083 
+z
+" style="fill: #2a78d6; stroke: #2a78d6; stroke-linejoin: miter"/>
+    </g>
+    <g id="f5-text_22">
+     <text style="font-size: 8.4px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="166.488313" y="26.4883" transform="rotate(-0 166.488313 26.4883)">2026, frozen loadings</text>
+    </g>
+   </g>
+  </g>
+  <g id="f5-axes_2">
+   <g id="f5-patch_14">
+    <path d="M 368.687591 350.3335 
+L 682.1165 350.3335 
+L 682.1165 35.8375 
+L 368.687591 35.8375 
+z
+" style="fill: #fcfcfb"/>
+   </g>
+   <g id="f5-matplotlib.axis_3">
+    <g id="f5-xtick_7">
+     <g id="f5-line2d_17">
+      <path d="M 395.942279 350.3335 
+L 395.942279 35.8375 
+" clip-path="url(#f5-p8b3a4a1347)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f5-line2d_18"/>
+     <g id="f5-text_23">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="395.942279" y="363.9015" transform="rotate(-0 395.942279 363.9015)">−30</text>
+     </g>
+    </g>
+    <g id="f5-xtick_8">
+     <g id="f5-line2d_19">
+      <path d="M 464.078998 350.3335 
+L 464.078998 35.8375 
+" clip-path="url(#f5-p8b3a4a1347)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f5-line2d_20"/>
+     <g id="f5-text_24">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="464.078998" y="363.9015" transform="rotate(-0 464.078998 363.9015)">−20</text>
+     </g>
+    </g>
+    <g id="f5-xtick_9">
+     <g id="f5-line2d_21">
+      <path d="M 532.215718 350.3335 
+L 532.215718 35.8375 
+" clip-path="url(#f5-p8b3a4a1347)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f5-line2d_22"/>
+     <g id="f5-text_25">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="532.215718" y="363.9015" transform="rotate(-0 532.215718 363.9015)">−10</text>
+     </g>
+    </g>
+    <g id="f5-xtick_10">
+     <g id="f5-line2d_23">
+      <path d="M 600.352437 350.3335 
+L 600.352437 35.8375 
+" clip-path="url(#f5-p8b3a4a1347)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f5-line2d_24"/>
+     <g id="f5-text_26">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="600.352437" y="363.9015" transform="rotate(-0 600.352437 363.9015)">0</text>
+     </g>
+    </g>
+    <g id="f5-xtick_11">
+     <g id="f5-line2d_25">
+      <path d="M 668.489156 350.3335 
+L 668.489156 35.8375 
+" clip-path="url(#f5-p8b3a4a1347)" style="fill: none; stroke: #e1e0d9; stroke-width: 0.7; stroke-linecap: round"/>
+     </g>
+     <g id="f5-line2d_26"/>
+     <g id="f5-text_27">
+      <text style="font-size: 9px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="668.489156" y="363.9015" transform="rotate(-0 668.489156 363.9015)">10</text>
+     </g>
+    </g>
+    <g id="f5-text_28">
+     <text style="font-size: 9.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #52514e" x="525.402046" y="378.8625" transform="rotate(-0 525.402046 378.8625)">Out-of-sample R² against no change, %</text>
+    </g>
+   </g>
+   <g id="f5-matplotlib.axis_4">
+    <g id="f5-ytick_5">
+     <g id="f5-line2d_27"/>
+     <g id="f5-text_29">
+      <text style="font-size: 8.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="363.687591" y="66.710809" transform="rotate(-0 363.687591 66.710809)">2-year, 1 day</text>
+     </g>
+    </g>
+    <g id="f5-ytick_6">
+     <g id="f5-line2d_28"/>
+     <g id="f5-text_30">
+      <text style="font-size: 8.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="363.687591" y="85.771173" transform="rotate(-0 363.687591 85.771173)">2-year, 5 days</text>
+     </g>
+    </g>
+    <g id="f5-ytick_7">
+     <g id="f5-line2d_29"/>
+     <g id="f5-text_31">
+      <text style="font-size: 8.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="363.687591" y="104.831536" transform="rotate(-0 363.687591 104.831536)">2-year, 20 days</text>
+     </g>
+    </g>
+    <g id="f5-ytick_8">
+     <g id="f5-line2d_30"/>
+     <g id="f5-text_32">
+      <text style="font-size: 8.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="363.687591" y="133.422082" transform="rotate(-0 363.687591 133.422082)">5-year, 1 day</text>
+     </g>
+    </g>
+    <g id="f5-ytick_9">
+     <g id="f5-line2d_31"/>
+     <g id="f5-text_33">
+      <text style="font-size: 8.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="363.687591" y="152.482445" transform="rotate(-0 363.687591 152.482445)">5-year, 5 days</text>
+     </g>
+    </g>
+    <g id="f5-ytick_10">
+     <g id="f5-line2d_32"/>
+     <g id="f5-text_34">
+      <text style="font-size: 8.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="363.687591" y="171.542809" transform="rotate(-0 363.687591 171.542809)">5-year, 20 days</text>
+     </g>
+    </g>
+    <g id="f5-ytick_11">
+     <g id="f5-line2d_33"/>
+     <g id="f5-text_35">
+      <text style="font-size: 8.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="363.687591" y="200.133355" transform="rotate(-0 363.687591 200.133355)">10-year, 1 day</text>
+     </g>
+    </g>
+    <g id="f5-ytick_12">
+     <g id="f5-line2d_34"/>
+     <g id="f5-text_36">
+      <text style="font-size: 8.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="363.687591" y="219.193718" transform="rotate(-0 363.687591 219.193718)">10-year, 5 days</text>
+     </g>
+    </g>
+    <g id="f5-ytick_13">
+     <g id="f5-line2d_35"/>
+     <g id="f5-text_37">
+      <text style="font-size: 8.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="363.687591" y="238.254082" transform="rotate(-0 363.687591 238.254082)">10-year, 20 days</text>
+     </g>
+    </g>
+    <g id="f5-ytick_14">
+     <g id="f5-line2d_36"/>
+     <g id="f5-text_38">
+      <text style="font-size: 8.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="363.687591" y="266.844627" transform="rotate(-0 363.687591 266.844627)">30-year, 1 day</text>
+     </g>
+    </g>
+    <g id="f5-ytick_15">
+     <g id="f5-line2d_37"/>
+     <g id="f5-text_39">
+      <text style="font-size: 8.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="363.687591" y="285.904991" transform="rotate(-0 363.687591 285.904991)">30-year, 5 days</text>
+     </g>
+    </g>
+    <g id="f5-ytick_16">
+     <g id="f5-line2d_38"/>
+     <g id="f5-text_40">
+      <text style="font-size: 8.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="363.687591" y="304.965355" transform="rotate(-0 363.687591 304.965355)">30-year, 20 days</text>
+     </g>
+    </g>
+    <g id="f5-ytick_17">
+     <g id="f5-line2d_39"/>
+     <g id="f5-text_41">
+      <text style="font-size: 8.8px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: end; fill: #0b0b0b" x="363.687591" y="339.274009" transform="rotate(-0 363.687591 339.274009)">10-year, 1 day, same close</text>
+     </g>
+    </g>
+   </g>
+   <g id="f5-line2d_40">
+    <path d="M 600.352437 350.3335 
+L 600.352437 35.8375 
+" clip-path="url(#f5-p8b3a4a1347)" style="fill: none; stroke: #0b0b0b; stroke-width: 1.1; stroke-linecap: round"/>
+   </g>
+   <g id="f5-patch_15">
+    <path d="M 368.687591 350.3335 
+L 682.1165 350.3335 
+" style="fill: none; stroke: #c3c2b7; stroke-width: 0.8; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="f5-line2d_41">
+    <defs>
+     <path id="f5-m4f17b2b9af" d="M 0 3.5 
+C 0.928211 3.5 1.81853 3.131218 2.474874 2.474874 
+C 3.131218 1.81853 3.5 0.928211 3.5 0 
+C 3.5 -0.928211 3.131218 -1.81853 2.474874 -2.474874 
+C 1.81853 -3.131218 0.928211 -3.5 0 -3.5 
+C -0.928211 -3.5 -1.81853 -3.131218 -2.474874 -2.474874 
+C -3.131218 -1.81853 -3.5 -0.928211 -3.5 0 
+C -3.5 0.928211 -3.131218 1.81853 -2.474874 2.474874 
+C -1.81853 3.131218 -0.928211 3.5 0 3.5 
+z
+" style="stroke: #fcfcfb; stroke-width: 1.4"/>
+    </defs>
+    <g clip-path="url(#f5-p8b3a4a1347)">
+     <use xlink:href="#f5-m4f17b2b9af" x="592.244167" y="59.281747" style="fill: #898781; stroke: #fcfcfb; stroke-width: 1.4"/>
+    </g>
+   </g>
+   <g id="f5-line2d_42">
+    <g clip-path="url(#f5-p8b3a4a1347)">
+     <use xlink:href="#f5-m4f17b2b9af" x="561.787054" y="78.342111" style="fill: #898781; stroke: #fcfcfb; stroke-width: 1.4"/>
+    </g>
+   </g>
+   <g id="f5-line2d_43">
+    <g clip-path="url(#f5-p8b3a4a1347)">
+     <use xlink:href="#f5-m4f17b2b9af" x="493.309651" y="97.402475" style="fill: #898781; stroke: #fcfcfb; stroke-width: 1.4"/>
+    </g>
+   </g>
+   <g id="f5-line2d_44">
+    <g clip-path="url(#f5-p8b3a4a1347)">
+     <use xlink:href="#f5-m4f17b2b9af" x="595.582866" y="125.99302" style="fill: #898781; stroke: #fcfcfb; stroke-width: 1.4"/>
+    </g>
+   </g>
+   <g id="f5-line2d_45">
+    <g clip-path="url(#f5-p8b3a4a1347)">
+     <use xlink:href="#f5-m4f17b2b9af" x="571.939425" y="145.053384" style="fill: #898781; stroke: #fcfcfb; stroke-width: 1.4"/>
+    </g>
+   </g>
+   <g id="f5-line2d_46">
+    <g clip-path="url(#f5-p8b3a4a1347)">
+     <use xlink:href="#f5-m4f17b2b9af" x="476.002924" y="164.113747" style="fill: #898781; stroke: #fcfcfb; stroke-width: 1.4"/>
+    </g>
+   </g>
+   <g id="f5-line2d_47">
+    <g clip-path="url(#f5-p8b3a4a1347)">
+     <use xlink:href="#f5-m4f17b2b9af" x="596.673054" y="192.704293" style="fill: #898781; stroke: #fcfcfb; stroke-width: 1.4"/>
+    </g>
+   </g>
+   <g id="f5-line2d_48">
+    <g clip-path="url(#f5-p8b3a4a1347)">
+     <use xlink:href="#f5-m4f17b2b9af" x="578.616823" y="211.764656" style="fill: #898781; stroke: #fcfcfb; stroke-width: 1.4"/>
+    </g>
+   </g>
+   <g id="f5-line2d_49">
+    <g clip-path="url(#f5-p8b3a4a1347)">
+     <use xlink:href="#f5-m4f17b2b9af" x="490.924866" y="230.82502" style="fill: #898781; stroke: #fcfcfb; stroke-width: 1.4"/>
+    </g>
+   </g>
+   <g id="f5-line2d_50">
+    <g clip-path="url(#f5-p8b3a4a1347)">
+     <use xlink:href="#f5-m4f17b2b9af" x="582.023659" y="259.415565" style="fill: #898781; stroke: #fcfcfb; stroke-width: 1.4"/>
+    </g>
+   </g>
+   <g id="f5-line2d_51">
+    <g clip-path="url(#f5-p8b3a4a1347)">
+     <use xlink:href="#f5-m4f17b2b9af" x="535.145596" y="278.475929" style="fill: #898781; stroke: #fcfcfb; stroke-width: 1.4"/>
+    </g>
+   </g>
+   <g id="f5-line2d_52">
+    <g clip-path="url(#f5-p8b3a4a1347)">
+     <use xlink:href="#f5-m4f17b2b9af" x="390.286931" y="297.536293" style="fill: #898781; stroke: #fcfcfb; stroke-width: 1.4"/>
+    </g>
+   </g>
+   <g id="f5-line2d_53">
+    <g clip-path="url(#f5-p8b3a4a1347)">
+     <use xlink:href="#f5-m4f17b2b9af" x="594.765226" y="331.844947" style="fill: #898781; stroke: #fcfcfb; stroke-width: 1.4"/>
+    </g>
+   </g>
+   <g id="f5-text_42">
+    <text style="font-size: 8.4px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #52514e" x="617.386617" y="341.429271" transform="rotate(-0 617.386617 341.429271)">+1.3% (timing artefact)</text>
+   </g>
+   <g id="f5-text_43">
+    <text style="font-size: 8.4px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="604.44064" y="44.5315" transform="rotate(-0 604.44064 44.5315)">no-change forecast</text>
+   </g>
+   <g id="f5-text_44">
+    <text style="font-weight: 700; font-size: 10.5px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="368.687591" y="13.8375" transform="rotate(-0 368.687591 13.8375)">Predicts nothing (real time, 2012–2025)</text>
+   </g>
+   <g id="f5-line2d_54">
+    <defs>
+     <path id="f5-m1e8ba5ef55" d="M 0 3.5 
+C 0.928211 3.5 1.81853 3.131218 2.474874 2.474874 
+C 3.131218 1.81853 3.5 0.928211 3.5 0 
+C 3.5 -0.928211 3.131218 -1.81853 2.474874 -2.474874 
+C 1.81853 -3.131218 0.928211 -3.5 0 -3.5 
+C -0.928211 -3.5 -1.81853 -3.131218 -2.474874 -2.474874 
+C -3.131218 -1.81853 -3.5 -0.928211 -3.5 0 
+C -3.5 0.928211 -3.131218 1.81853 -2.474874 2.474874 
+C -1.81853 3.131218 -0.928211 3.5 0 3.5 
+z
+" style="stroke: #fcfcfb; stroke-width: 1.4"/>
+    </defs>
+    <g clip-path="url(#f5-p8b3a4a1347)">
+     <use xlink:href="#f5-m1e8ba5ef55" x="593.129945" y="65.762271" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.4"/>
+    </g>
+   </g>
+   <g id="f5-line2d_55">
+    <g clip-path="url(#f5-p8b3a4a1347)">
+     <use xlink:href="#f5-m1e8ba5ef55" x="561.173823" y="84.822635" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.4"/>
+    </g>
+   </g>
+   <g id="f5-line2d_56">
+    <g clip-path="url(#f5-p8b3a4a1347)">
+     <use xlink:href="#f5-m1e8ba5ef55" x="492.355737" y="103.882998" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.4"/>
+    </g>
+   </g>
+   <g id="f5-line2d_57">
+    <g clip-path="url(#f5-p8b3a4a1347)">
+     <use xlink:href="#f5-m1e8ba5ef55" x="595.855413" y="132.473544" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.4"/>
+    </g>
+   </g>
+   <g id="f5-line2d_58">
+    <g clip-path="url(#f5-p8b3a4a1347)">
+     <use xlink:href="#f5-m1e8ba5ef55" x="571.394331" y="151.533907" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.4"/>
+    </g>
+   </g>
+   <g id="f5-line2d_59">
+    <g clip-path="url(#f5-p8b3a4a1347)">
+     <use xlink:href="#f5-m1e8ba5ef55" x="474.503916" y="170.594271" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.4"/>
+    </g>
+   </g>
+   <g id="f5-line2d_60">
+    <g clip-path="url(#f5-p8b3a4a1347)">
+     <use xlink:href="#f5-m1e8ba5ef55" x="595.582866" y="199.184816" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.4"/>
+    </g>
+   </g>
+   <g id="f5-line2d_61">
+    <g clip-path="url(#f5-p8b3a4a1347)">
+     <use xlink:href="#f5-m1e8ba5ef55" x="577.594773" y="218.24518" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.4"/>
+    </g>
+   </g>
+   <g id="f5-line2d_62">
+    <g clip-path="url(#f5-p8b3a4a1347)">
+     <use xlink:href="#f5-m1e8ba5ef55" x="490.243498" y="237.305544" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.4"/>
+    </g>
+   </g>
+   <g id="f5-line2d_63">
+    <g clip-path="url(#f5-p8b3a4a1347)">
+     <use xlink:href="#f5-m1e8ba5ef55" x="580.456515" y="265.896089" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.4"/>
+    </g>
+   </g>
+   <g id="f5-line2d_64">
+    <g clip-path="url(#f5-p8b3a4a1347)">
+     <use xlink:href="#f5-m1e8ba5ef55" x="533.646589" y="284.956453" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.4"/>
+    </g>
+   </g>
+   <g id="f5-line2d_65">
+    <g clip-path="url(#f5-p8b3a4a1347)">
+     <use xlink:href="#f5-m1e8ba5ef55" x="388.106556" y="304.016816" style="fill: #2a78d6; stroke: #fcfcfb; stroke-width: 1.4"/>
+    </g>
+   </g>
+   <g id="f5-line2d_66">
+    <defs>
+     <path id="f5-mfa8e3fe656" d="M 0 3.5 
+C 0.928211 3.5 1.81853 3.131218 2.474874 2.474874 
+C 3.131218 1.81853 3.5 0.928211 3.5 0 
+C 3.5 -0.928211 3.131218 -1.81853 2.474874 -2.474874 
+C 1.81853 -3.131218 0.928211 -3.5 0 -3.5 
+C -0.928211 -3.5 -1.81853 -3.131218 -2.474874 -2.474874 
+C -3.131218 -1.81853 -3.5 -0.928211 -3.5 0 
+C -3.5 0.928211 -3.131218 1.81853 -2.474874 2.474874 
+C -1.81853 3.131218 -0.928211 3.5 0 3.5 
+z
+" style="stroke: #2a78d6; stroke-width: 1.6"/>
+    </defs>
+    <g clip-path="url(#f5-p8b3a4a1347)">
+     <use xlink:href="#f5-mfa8e3fe656" x="609.21021" y="338.325471" style="fill: #fcfcfb; stroke: #2a78d6; stroke-width: 1.6"/>
+    </g>
+   </g>
+   <g id="f5-legend_2">
+    <g id="f5-line2d_67">
+     <defs>
+      <path id="f5-m37293b8d8e" d="M 0 3.75 
+C 0.994512 3.75 1.948425 3.354876 2.65165 2.65165 
+C 3.354876 1.948425 3.75 0.994512 3.75 0 
+C 3.75 -0.994512 3.354876 -1.948425 2.65165 -2.65165 
+C 1.948425 -3.354876 0.994512 -3.75 0 -3.75 
+C -0.994512 -3.75 -1.948425 -3.354876 -2.65165 -2.65165 
+C -3.354876 -1.948425 -3.75 -0.994512 -3.75 0 
+C -3.75 0.994512 -3.354876 1.948425 -2.65165 2.65165 
+C -1.948425 3.354876 -0.994512 3.75 0 3.75 
+z
+" style="stroke: #898781"/>
+     </defs>
+     <g>
+      <use xlink:href="#f5-m37293b8d8e" x="384.647591" y="23.5483" style="fill: #898781; stroke: #898781"/>
+     </g>
+    </g>
+    <g id="f5-text_45">
+     <text style="font-size: 8.4px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="395.567591" y="26.4883" transform="rotate(-0 395.567591 26.4883)">Own move and curve state</text>
+    </g>
+    <g id="f5-line2d_68">
+     <defs>
+      <path id="f5-m5503ba1cfe" d="M 0 3.75 
+C 0.994512 3.75 1.948425 3.354876 2.65165 2.65165 
+C 3.354876 1.948425 3.75 0.994512 3.75 0 
+C 3.75 -0.994512 3.354876 -1.948425 2.65165 -2.65165 
+C 1.948425 -3.354876 0.994512 -3.75 0 -3.75 
+C -0.994512 -3.75 -1.948425 -3.354876 -2.65165 -2.65165 
+C -3.354876 -1.948425 -3.75 -0.994512 -3.75 0 
+C -3.75 0.994512 -3.354876 1.948425 -2.65165 2.65165 
+C -1.948425 3.354876 -0.994512 3.75 0 3.75 
+z
+" style="stroke: #2a78d6"/>
+     </defs>
+     <g>
+      <use xlink:href="#f5-m5503ba1cfe" x="513.191216" y="23.5483" style="fill: #2a78d6; stroke: #2a78d6"/>
+     </g>
+    </g>
+    <g id="f5-text_46">
+     <text style="font-size: 8.4px; font-family: 'Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #0b0b0b" x="524.111216" y="26.4883" transform="rotate(-0 524.111216 26.4883)">Plus origin of today's news</text>
+    </g>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="f5-p1b1b160744">
+   <rect x="41.3165" y="35.8375" width="216.157868" height="314.496"/>
+  </clipPath>
+  <clipPath id="f5-p8b3a4a1347">
+   <rect x="368.687591" y="35.8375" width="313.428909" height="314.496"/>
+  </clipPath>
+ </defs>
+</svg>
+</div>
+  <figcaption>Left: share of the daily variance of each yield explained by the five shocks, with loadings frozen at end-2025. Right: real-time out-of-sample R² against a no-change forecast for the change over the next 1, 5 and 20 days, measured from the next close.</figcaption>
+</figure>
+<details class="tableview"><summary>Table: explanatory fit of the frozen loadings</summary><div class="tablewrap"><table><thead><tr><th scope="col"></th><th scope="col" class=num>Daily R² 2007–2025</th><th scope="col" class=num>Daily R² 2026</th><th scope="col" class=num>RMSE 2026, bp</th><th scope="col" class=num>s.d. of daily change 2026, bp</th></tr></thead><tbody><tr><th scope="row">2-year</th><td class="num">52%</td><td class="num">59%</td><td class="num">3.2</td><td class="num">5.0</td></tr><tr><th scope="row">5-year</th><td class="num">81%</td><td class="num">83%</td><td class="num">2.0</td><td class="num">5.0</td></tr><tr><th scope="row">10-year</th><td class="num">91%</td><td class="num">92%</td><td class="num">1.3</td><td class="num">4.4</td></tr><tr><th scope="row">30-year</th><td class="num">80%</td><td class="num">80%</td><td class="num">1.7</td><td class="num">3.9</td></tr></tbody></table></div></details><details class="tableview"><summary>Table: out-of-sample R² against a no-change forecast, %, from the next close</summary><div class="tablewrap"><table><thead><tr><th scope="col">Maturity, horizon, period</th><th scope="col" class=num>Own move</th><th scope="col" class=num>Plus curve state</th><th scope="col" class=num>Plus origin of news</th><th scope="col" class=num>Clark–West p, origin</th></tr></thead><tbody><tr><th scope="row">2−year, 1d, 2012–2025 real time</th><td class="num">−0.5</td><td class="num">−1.2</td><td class="num">−1.1</td><td class="num">0.11</td></tr><tr><th scope="row">2−year, 5d, 2012–2025 real time</th><td class="num">−1.9</td><td class="num">−5.7</td><td class="num">−5.8</td><td class="num">0.80</td></tr><tr><th scope="row">2−year, 20d, 2012–2025 real time</th><td class="num">−6.4</td><td class="num">−15.7</td><td class="num">−15.8</td><td class="num">1.00</td></tr><tr><th scope="row">5−year, 1d, 2012–2025 real time</th><td class="num">−0.2</td><td class="num">−0.7</td><td class="num">−0.7</td><td class="num">0.13</td></tr><tr><th scope="row">5−year, 5d, 2012–2025 real time</th><td class="num">−1.0</td><td class="num">−4.2</td><td class="num">−4.2</td><td class="num">0.20</td></tr><tr><th scope="row">5−year, 20d, 2012–2025 real time</th><td class="num">−3.8</td><td class="num">−18.2</td><td class="num">−18.5</td><td class="num">0.99</td></tr><tr><th scope="row">10−year, 1d, 2012–2025 real time</th><td class="num">−0.0</td><td class="num">−0.5</td><td class="num">−0.7</td><td class="num">0.36</td></tr><tr><th scope="row">10−year, 5d, 2012–2025 real time</th><td class="num">−0.6</td><td class="num">−3.2</td><td class="num">−3.3</td><td class="num">0.35</td></tr><tr><th scope="row">10−year, 20d, 2012–2025 real time</th><td class="num">−2.4</td><td class="num">−16.1</td><td class="num">−16.2</td><td class="num">0.80</td></tr><tr><th scope="row">30−year, 1d, 2012–2025 real time</th><td class="num">−0.0</td><td class="num">−2.7</td><td class="num">−2.9</td><td class="num">0.63</td></tr><tr><th scope="row">30−year, 5d, 2012–2025 real time</th><td class="num">−0.4</td><td class="num">−9.6</td><td class="num">−9.8</td><td class="num">0.69</td></tr><tr><th scope="row">30−year, 20d, 2012–2025 real time</th><td class="num">−1.6</td><td class="num">−30.8</td><td class="num">−31.1</td><td class="num">0.98</td></tr><tr><th scope="row">2−year, 1d, 2026 frozen model</th><td class="num">−0.3</td><td class="num">−1.8</td><td class="num">−2.1</td><td class="num">0.68</td></tr><tr><th scope="row">2−year, 5d, 2026 frozen model</th><td class="num">−1.3</td><td class="num">−11.6</td><td class="num">−11.3</td><td class="num">0.10</td></tr><tr><th scope="row">2−year, 20d, 2026 frozen model</th><td class="num">−2.8</td><td class="num">−41.4</td><td class="num">−41.3</td><td class="num">0.38</td></tr><tr><th scope="row">5−year, 1d, 2026 frozen model</th><td class="num">−0.8</td><td class="num">−1.5</td><td class="num">−1.5</td><td class="num">0.40</td></tr><tr><th scope="row">5−year, 5d, 2026 frozen model</th><td class="num">−1.2</td><td class="num">−4.3</td><td class="num">−3.4</td><td class="num">0.04</td></tr><tr><th scope="row">5−year, 20d, 2026 frozen model</th><td class="num">−1.9</td><td class="num">−13.0</td><td class="num">−12.8</td><td class="num">0.18</td></tr><tr><th scope="row">10−year, 1d, 2026 frozen model</th><td class="num">−0.5</td><td class="num">−0.8</td><td class="num">−1.2</td><td class="num">0.60</td></tr><tr><th scope="row">10−year, 5d, 2026 frozen model</th><td class="num">−0.7</td><td class="num">−1.1</td><td class="num">−0.8</td><td class="num">0.19</td></tr><tr><th scope="row">10−year, 20d, 2026 frozen model</th><td class="num">−1.1</td><td class="num">−4.0</td><td class="num">−3.7</td><td class="num">0.24</td></tr><tr><th scope="row">30−year, 1d, 2026 frozen model</th><td class="num">−0.3</td><td class="num">−0.4</td><td class="num">−0.5</td><td class="num">0.35</td></tr><tr><th scope="row">30−year, 5d, 2026 frozen model</th><td class="num">−0.2</td><td class="num">−0.2</td><td class="num">0.0</td><td class="num">0.23</td></tr><tr><th scope="row">30−year, 20d, 2026 frozen model</th><td class="num">0.1</td><td class="num">−4.4</td><td class="num">−4.0</td><td class="num">0.18</td></tr></tbody></table></div></details>
+
+<h2 id="method">Method</h2>
+<p><strong>Model.</strong> Brandt et al.'s (2021) daily Bayesian VAR in five variables, recorded at or near the New York close: the 10-year euro-area OIS rate (EONIA, then €STR), the Euro Stoxx 50 future, the S&amp;P 500, the euro-dollar exchange rate and the euro-area minus US 10-year spread. Estimated on 2007–2025 (4,673 days) with four lags and a Minnesota prior (overall tightness 0.2):</p>
+<p class="eq"><var>Y</var><sub><var>t</var></sub> = <var>c</var> + <var>A</var><sub>1</sub><var>Y</var><sub><var>t</var>−1</sub> + … + <var>A</var><sub>4</sub><var>Y</var><sub><var>t</var>−4</sub> + <var>u</var><sub><var>t</var></sub>, &nbsp;&nbsp; <var>u</var><sub><var>t</var></sub> = <var>B</var><var>ε</var><sub><var>t</var></sub>, &nbsp;&nbsp; E[<var>ε</var><sub><var>t</var></sub><var>ε</var><sub><var>t</var></sub>′] = <var>I</var>,</p>
+<p class="eq-note">where <var>Y</var><sub><var>t</var></sub> holds the five daily changes, <var>u</var><sub><var>t</var></sub> the reduced-form innovations with covariance Σ, and <var>ε</var><sub><var>t</var></sub> the five structural shocks. The impact matrix <var>B</var> = chol(Σ)<var>Q</var> is identified only up to the orthogonal rotation <var>Q</var>.</p>
+<p><strong>Identification.</strong> Sign restrictions on impact, exactly as in Brandt et al.'s Table 1. Rotations are drawn uniformly (Arias, Rubio-Ramírez and Waggoner, 2018) jointly with the reduced-form posterior until 1,000 satisfy the restrictions (2.5% of candidates). The spread restriction identifies the country of origin: a domestic shock moves the domestic long rate by more than the foreign one.</p>
+<div class="tablewrap"><table class="restrict">
+<thead><tr><th scope="col">Response on impact to a positive shock</th><th scope="col">Euro-area monetary</th><th scope="col">Euro-area macro</th><th scope="col">US monetary</th><th scope="col">US macro</th><th scope="col">Global risk (risk-off)</th></tr></thead>
+<tbody>
+<tr><th scope="row">Euro-area 10-year OIS rate</th><td class="p">+</td><td class="p">+</td><td class="p">+</td><td class="p">+</td><td class="m">−</td></tr>
+<tr><th scope="row">Euro Stoxx 50</th><td class="m">−</td><td class="p">+</td><td>·</td><td>·</td><td class="m">−</td></tr>
+<tr><th scope="row">S&amp;P 500</th><td>·</td><td>·</td><td class="m">−</td><td class="p">+</td><td class="m">−</td></tr>
+<tr><th scope="row">Euro against the dollar</th><td class="p">+</td><td class="p">+</td><td class="m">−</td><td class="m">−</td><td class="m">−</td></tr>
+<tr><th scope="row">Euro-area minus US 10-year spread</th><td class="p">+</td><td class="p">+</td><td class="m">−</td><td class="m">−</td><td class="p">+</td></tr>
+<tr><th scope="row"><em>Implied: US 10-year yield</em></th><td colspan="2"><em>rises less than the euro rate, or falls</em></td><td colspan="2"><em>rises more than the euro rate</em></td><td><em>falls more than the euro rate</em></td></tr>
+</tbody></table></div>
+<p class="eq-note">· = unrestricted. US monetary and US macro news both raise US yields and the dollar; they differ only in the sign of the S&amp;P 500 response, which is why the split between them is fragile. A positive global-risk shock is a flight to safety, so a negative one (improving sentiment) raises Treasury yields.</p>
+<p><strong>The Treasury curve.</strong> The model contains one Treasury yield. The 2-, 5-, 10- and 30-year H.15 yields are attached by projecting each day's change on the five shocks and two lags, model by model, on 2007–2025 data:</p>
+<p class="eq">Δ<var>y</var><sub><var>τ</var>,<var>t</var></sub> = <var>c</var><sub><var>τ</var></sub> + Σ<sub><var>k</var>=1</sub><sup>5</sup> Σ<sub><var>s</var>=0</sub><sup>2</sup> <var>θ</var><sub><var>τ</var>,<var>k</var>,<var>s</var></sub> <var>ε</var><sub><var>k</var>,<var>t</var>−<var>s</var></sub> + <var>e</var><sub><var>τ</var>,<var>t</var></sub>,</p>
+<p class="eq-note">where Δ<var>y</var><sub><var>τ</var>,<var>t</var></sub> is the daily change in the <var>τ</var>-year yield. The lags credit the catch-up of H.15 yields, which are recorded before the New York close, to the shock that caused it. The contribution of shock <var>k</var> over a window <var>W</var> is Σ<sub><var>t</var>∈<var>W</var></sub> Σ<sub><var>s</var></sub> <var>θ</var><sub><var>τ</var>,<var>k</var>,<var>s</var></sub><var>ε</var><sub><var>k</var>,<var>t</var>−<var>s</var></sub>; the rest of the window's change is "unspanned": news the five cross-asset shocks do not represent. Because the span of the shocks does not depend on the rotation, neither does the unspanned part.</p>
+<p><strong>Discipline.</strong> The model and the curve loadings were frozen at end-2025, hashed, and committed before any 2026 maturity data were read; the design was pre-registered. Nothing is re-estimated on 2026 data. On 2007–2025 the model reproduces Brandt et al.'s spillovers closely (US shocks explain 35% of the daily variance of the euro-area rate, against their 40%), and its median-target model attributes 15 of 18 of their dated events to the expected shock, although the average admissible model manages only 50%. In the full sample, US shocks account for 51% of the daily variance of the 10-year Treasury yield, global risk for 34% and euro-area shocks for 14%.</p>
+
+<h2 id="limitations">Limitations</h2>
+<ul>
+<li><strong>Set identification.</strong> The 5–95% range of the US contribution to the 10-year spans 88bp. Robust statements concern the origin of the news and the unspanned front end; the macro/monetary split and the global/euro-area split are not robust.</li>
+<li><strong>The representative model is not central on every dimension.</strong> The median-target model used in Figures 1–3 sits near the upper end of the US-news range and at the bottom of the euro-area range; the medians across models are reported beside it throughout.</li>
+<li><strong>Timing.</strong> H.15 yields are recorded before the New York close; two lags in the projection handle this for attribution. LSEG benchmark yields at every maturity would remove the issue.</li>
+<li><strong>Unspanned is not noise.</strong> It is news the five cross-asset shocks do not represent. Reading the front-end part as a policy-path repricing relies on the NY Fed's term-structure model, itself an estimate.</li>
+<li><strong>Expectations versus term premium.</strong> Loadings estimated on 2007–2025, a sample in which the policy rate sat at its lower bound almost half the time, map cross-asset news mainly into the term premium; in 2026 the same news moved expected rates instead (the NY Fed's model puts 79% of the 10-year's rise in expected rates). A lower bound mutes the response of expected rates to news (Swanson and Williams, 2014), so any fixed mapping from this decomposition into expectations and premia is regime-dependent.</li>
+<li><strong>Data.</strong> The five model variables are LSEG data recorded at the New York close and cannot be redistributed. The figures and this page are rebuilt from derived tables that are published with the code.</li>
+</ul>
+
+<h2 id="references">References</h2>
+<ol class="refs">
+<li>Brandt, L., Saint Guilhem, A., Schröder, M. and Van Robays, I. (2021). What drives euro area financial market developments? The role of US spillovers and global risk. ECB Working Paper No. 2560.</li>
+<li>Arias, J. E., Rubio-Ramírez, J. F. and Waggoner, D. F. (2018). Inference based on structural vector autoregressions identified with sign and zero restrictions: theory and applications. <em>Econometrica</em>, 86(2), 685–720.</li>
+<li>Fry, R. and Pagan, A. (2011). Sign restrictions in structural vector autoregressions: a critical review. <em>Journal of Economic Literature</em>, 49(4), 938–960.</li>
+<li>Adrian, T., Crump, R. K. and Moench, E. (2013). Pricing the term structure with linear regressions. <em>Journal of Financial Economics</em>, 110(1), 110–138.</li>
+<li>Clark, T. E. and West, K. D. (2007). Approximately normal tests for equal predictive accuracy in nested models. <em>Journal of Econometrics</em>, 138(1), 291–311.</li>
+<li>Swanson, E. T. and Williams, J. C. (2014). Measuring the effect of the zero lower bound on medium- and longer-term interest rates. <em>American Economic Review</em>, 104(10), 3154–3185.</li>
+</ol>
+
+<footer>
+<p>Data: LSEG (euro-area OIS, Euro Stoxx 50 future, euro-dollar, 10-year Treasury benchmark, all near the New York close); S&amp;P 500; Federal Reserve H.15 constant-maturity yields; Federal Reserve Bank of New York ACM term-structure estimates. Sample 2007–2025 for estimation; 188 trading days of 2026 to 5 October. Every number on this page is computed from the derived tables in <code>output/data/</code>; rebuild with <code>python scripts/build_research_output.py</code>. Code, pre-registrations and audit trail: <a href="https://github.com/adambutlin/curves">github.com/adambutlin/curves</a>.</p>
+</footer>
+</main>
+
+<script>
+(function () {
+  "use strict";
+  var D = {"date":["2025-12-30","2026-01-02","2026-01-05","2026-01-06","2026-01-07","2026-01-08","2026-01-09","2026-01-12","2026-01-13","2026-01-14","2026-01-15","2026-01-16","2026-01-20","2026-01-21","2026-01-22","2026-01-23","2026-01-26","2026-01-27","2026-01-28","2026-01-29","2026-01-30","2026-02-02","2026-02-03","2026-02-04","2026-02-05","2026-02-06","2026-02-09","2026-02-10","2026-02-11","2026-02-12","2026-02-13","2026-02-17","2026-02-18","2026-02-19","2026-02-20","2026-02-23","2026-02-24","2026-02-25","2026-02-26","2026-02-27","2026-03-02","2026-03-03","2026-03-04","2026-03-05","2026-03-06","2026-03-09","2026-03-10","2026-03-11","2026-03-12","2026-03-13","2026-03-16","2026-03-17","2026-03-18","2026-03-19","2026-03-20","2026-03-23","2026-03-24","2026-03-25","2026-03-26","2026-03-27","2026-03-30","2026-03-31","2026-04-01","2026-04-02","2026-04-07","2026-04-08","2026-04-09","2026-04-10","2026-04-13","2026-04-14","2026-04-15","2026-04-16","2026-04-17","2026-04-20","2026-04-21","2026-04-22","2026-04-23","2026-04-24","2026-04-27","2026-04-28","2026-04-29","2026-04-30","2026-05-04","2026-05-05","2026-05-06","2026-05-07","2026-05-08","2026-05-11","2026-05-12","2026-05-13","2026-05-14","2026-05-15","2026-05-18","2026-05-19","2026-05-20","2026-05-21","2026-05-22","2026-05-26","2026-05-27","2026-05-28","2026-05-29","2026-06-01","2026-06-02","2026-06-03","2026-06-04","2026-06-05","2026-06-08","2026-06-09","2026-06-10","2026-06-11","2026-06-12","2026-06-15","2026-06-16","2026-06-17","2026-06-18","2026-06-22","2026-06-23","2026-06-24","2026-06-25","2026-06-26","2026-06-29","2026-06-30","2026-07-01","2026-07-02","2026-07-06","2026-07-07","2026-07-08","2026-07-09","2026-07-10","2026-07-13","2026-07-14","2026-07-15","2026-07-16","2026-07-17","2026-07-20","2026-07-21","2026-07-22","2026-07-23","2026-07-24","2026-07-27","2026-07-28","2026-07-29","2026-07-30","2026-07-31","2026-08-03","2026-08-04","2026-08-05","2026-08-06","2026-08-07","2026-08-10","2026-08-11","2026-08-12","2026-08-13","2026-08-14","2026-08-17","2026-08-18","2026-08-19","2026-08-20","2026-08-21","2026-08-24","2026-08-25","2026-08-26","2026-08-27","2026-08-28","2026-08-31","2026-09-01","2026-09-02","2026-09-03","2026-09-04","2026-09-08","2026-09-09","2026-09-10","2026-09-11","2026-09-14","2026-09-15","2026-09-16","2026-09-17","2026-09-18","2026-09-21","2026-09-22","2026-09-23","2026-09-24","2026-09-25","2026-09-28","2026-09-29","2026-09-30","2026-10-01","2026-10-02","2026-10-05"],"actual":[0.0,5.0,3.0,4.0,1.0,5.0,4.0,5.0,4.0,1.0,3.0,10.0,16.0,12.0,12.0,10.0,8.0,10.0,12.0,10.0,12.0,15.0,14.0,15.0,7.0,8.0,8.0,2.0,4.0,-5.0,-10.0,-9.0,-5.0,-6.0,-6.0,-11.0,-10.0,-9.0,-12.0,-17.0,-9.0,-8.0,-5.0,-1.0,1.0,-2.0,1.0,7.0,13.0,14.0,9.0,6.0,12.0,11.0,25.0,20.0,25.0,19.0,28.0,30.0,21.0,16.0,19.0,17.0,19.0,15.0,15.0,17.0,16.0,12.0,15.0,18.0,12.0,12.0,16.0,16.0,20.0,17.0,21.0,22.0,28.0,26.0,31.0,29.0,22.0,27.0,24.0,28.0,32.0,32.0,33.0,45.0,47.0,53.0,43.0,43.0,42.0,36.0,34.0,31.0,31.0,33.0,32.0,35.0,33.0,41.0,42.0,39.0,41.0,31.0,34.0,33.0,29.0,35.0,32.0,37.0,36.0,27.0,26.0,24.0,24.0,30.0,34.0,35.0,34.0,41.0,42.0,40.0,42.0,48.0,44.0,41.0,43.0,41.0,46.0,49.0,53.0,57.0,55.0,51.0,47.0,53.0,54.0,61.0,56.0,49.0,49.0,55.0,51.0,58.0,56.0,54.0,49.0,54.0,58.0,57.0,51.0,55.0,60.0,56.0,50.0,52.0,53.0,59.0,61.0,65.0,65.0,63.0,64.0,66.0,69.0,81.0,82.0,83.0,86.0,87.0,80.0,87.0,82.0,82.0,97.0,104.0,103.0,110.0,112.0,115.0,110.0,114.0,117.0],"us":[0.0,6.2,3.5,4.9,2.8,4.6,5.7,4.8,5.6,3.1,6.2,9.8,9.9,8.8,7.2,3.5,-0.6,-4.3,-2.0,-3.8,0.3,5.3,4.7,4.8,1.0,0.1,-3.8,-6.9,-4.3,-8.0,-12.1,-11.4,-7.5,-7.1,-6.8,-9.5,-9.4,-9.9,-12.5,-15.8,-5.8,-0.7,-1.0,5.7,6.1,3.5,5.6,13.4,18.5,24.7,15.6,11.1,19.6,14.5,25.4,20.9,24.5,21.5,30.4,32.9,29.2,22.5,19.4,21.5,23.2,14.2,14.5,17.8,16.3,10.9,13.0,14.9,8.5,9.0,14.3,15.7,18.2,13.7,17.0,18.7,25.4,17.1,23.4,21.3,13.1,17.3,12.5,15.9,23.6,23.8,24.6,36.4,33.1,41.0,31.5,30.4,30.3,23.0,24.2,20.7,18.9,22.5,22.8,28.2,26.0,33.1,35.2,32.4,35.3,26.6,27.7,25.5,21.6,28.6,28.9,34.1,34.8,28.2,26.9,25.6,24.4,28.8,32.7,31.6,32.2,39.8,43.6,39.5,40.4,45.8,41.6,38.5,40.4,40.8,44.4,46.6,48.4,52.9,50.9,47.4,43.6,46.8,43.3,48.7,45.0,39.0,37.9,43.4,40.9,46.1,44.6,44.6,41.4,45.2,47.5,47.8,40.8,43.2,44.3,42.3,36.7,39.8,42.5,48.4,50.2,54.7,54.0,50.7,50.8,52.0,57.5,66.5,66.7,70.1,71.1,73.1,67.8,71.8,67.5,68.8,84.4,90.2,88.1,92.7,93.3,96.1,92.6,92.6,96.3],"gl":[0.0,1.2,1.2,1.0,1.3,1.3,1.2,4.0,2.9,2.2,2.2,3.6,8.5,6.0,7.3,8.7,10.3,16.1,14.1,14.2,11.4,10.8,10.9,11.4,7.7,9.4,13.2,11.4,11.6,9.4,7.9,8.7,7.9,6.6,8.1,7.0,6.7,9.2,8.1,5.6,2.5,-1.0,1.8,-0.7,-1.8,-2.4,-0.7,-1.4,-3.2,-6.9,-4.3,-2.2,-5.0,-1.5,0.0,1.9,1.0,-0.4,-1.7,-3.2,-5.8,-2.6,1.0,-1.4,-3.0,5.0,5.0,4.7,4.7,5.4,5.4,5.8,7.0,7.6,5.6,4.9,4.0,6.2,6.1,5.1,5.4,8.4,6.8,8.6,11.5,10.0,11.9,13.2,10.6,10.6,11.2,9.8,12.3,12.3,14.5,14.7,13.6,15.1,14.2,14.4,14.8,13.4,13.5,12.0,12.7,11.2,12.3,11.5,11.1,11.8,12.7,13.9,15.1,13.8,11.9,12.3,11.1,8.2,8.9,8.8,10.0,13.6,12.2,14.0,13.1,12.1,10.6,10.9,10.7,10.7,11.5,11.4,10.1,9.2,8.9,10.1,11.7,10.8,11.2,11.9,11.7,15.4,18.3,17.6,17.1,17.4,18.3,19.0,19.7,19.8,20.4,19.7,19.0,19.5,20.2,18.5,18.2,20.7,22.1,21.1,19.7,18.9,18.6,18.4,18.7,17.6,16.9,18.2,19.1,19.0,18.2,19.3,20.2,18.8,18.2,17.6,15.8,16.7,17.1,17.0,16.1,19.3,18.6,19.7,19.1,19.9,18.3,20.9,21.1],"ea":[0.0,-0.8,-1.5,-1.8,-1.8,-1.8,-2.4,-2.8,-2.8,-3.2,-3.2,-3.0,-1.6,-1.3,-1.6,-1.2,-1.1,-0.6,-0.2,-0.1,-0.6,-1.4,-1.6,-1.5,-1.6,-2.0,-2.3,-2.5,-2.7,-2.9,-3.2,-3.4,-4.2,-4.3,-4.5,-5.0,-5.2,-5.1,-5.4,-5.4,-4.2,-2.4,-2.0,-1.3,-0.7,-1.0,-1.2,-0.9,-0.9,-0.6,-0.9,-1.1,-0.4,0.2,0.7,0.2,-0.8,-1.2,-0.5,0.1,-0.4,-1.5,-2.3,-2.4,-2.2,-3.4,-3.4,-3.5,-3.5,-3.5,-2.9,-2.2,-3.1,-3.4,-2.4,-1.9,-1.6,-1.6,-1.2,-0.9,-0.2,-0.5,0.3,0.0,-1.8,-1.5,-0.8,-0.4,0.4,0.2,0.1,1.0,0.8,0.8,-0.2,-1.3,-1.3,-1.9,-2.3,-2.0,-1.6,-1.7,-2.2,-2.1,-2.3,-2.5,-2.4,-3.0,-2.8,-3.7,-4.5,-4.3,-4.5,-5.2,-6.1,-6.8,-6.7,-6.6,-7.3,-7.2,-6.8,-7.0,-6.6,-6.9,-7.5,-7.0,-5.8,-5.6,-5.5,-5.2,-5.1,-5.3,-5.5,-5.5,-5.1,-5.4,-5.8,-5.3,-5.3,-6.1,-6.4,-5.8,-5.8,-5.9,-6.2,-6.6,-6.6,-6.6,-6.7,-6.6,-6.8,-6.8,-7.0,-6.7,-6.4,-6.0,-5.7,-5.4,-5.2,-5.6,-6.0,-6.2,-5.6,-5.6,-5.2,-4.4,-4.3,-4.2,-4.2,-4.3,-3.6,-2.7,-2.5,-2.4,-2.2,-2.5,-3.0,-2.8,-3.1,-3.6,-3.1,-2.5,-2.5,-2.9,-2.8,-2.0,-1.2,-1.4,-1.5],"un":[0.0,-1.6,-0.2,-0.1,-1.3,0.9,-0.6,-1.0,-1.8,-1.1,-2.2,-0.4,-0.9,-1.6,-1.0,-1.0,-0.6,-1.2,0.2,-0.3,0.9,0.2,-0.0,0.3,-0.1,0.6,0.9,0.0,-0.5,-3.5,-2.7,-2.8,-1.2,-1.2,-2.8,-3.4,-2.1,-3.2,-2.2,-1.5,-1.5,-4.0,-3.7,-4.7,-2.6,-2.1,-2.7,-4.1,-1.5,-3.2,-1.4,-1.8,-2.2,-2.3,-1.2,-3.0,0.4,-0.9,-0.1,0.2,-2.0,-2.3,0.9,-0.7,1.0,-0.8,-1.1,-1.9,-1.5,-0.7,-0.5,-0.5,-0.4,-1.2,-1.5,-2.7,-0.6,-1.3,-0.9,-0.9,-2.6,1.0,0.6,-0.9,-0.9,1.2,0.4,-0.7,-2.6,-2.7,-2.9,-2.2,0.9,-1.1,-2.8,-0.7,-0.5,-0.2,-2.1,-2.1,-1.0,-1.2,-2.1,-3.2,-3.4,-0.8,-3.1,-1.9,-2.5,-3.7,-1.8,-2.1,-3.2,-2.2,-2.7,-2.6,-3.1,-2.8,-2.5,-3.1,-3.5,-5.4,-4.3,-3.7,-3.8,-3.9,-6.4,-4.8,-3.6,-3.2,-4.0,-3.7,-2.0,-3.5,-2.2,-2.3,-1.2,-1.4,-1.8,-2.2,-1.8,-3.4,-1.8,0.6,0.0,-0.8,-0.5,-0.8,-3.0,-1.2,-2.2,-3.5,-4.5,-3.9,-3.3,-3.3,-2.4,-3.5,-1.3,-1.9,-0.4,-0.6,-2.5,-2.1,-2.7,-2.9,-1.6,-1.7,-1.6,-0.8,-3.1,-2.1,-2.4,-3.5,-1.1,-1.1,-0.7,1.3,0.5,-0.2,-0.4,-3.1,-1.2,0.4,2.4,1.0,0.3,1.9,1.1],"us05":[0.0,0.0,-2.0,-1.1,-3.1,-1.7,-2.4,-4.7,-4.3,-6.7,-4.6,-2.9,-4.8,-3.4,-4.2,-6.3,-8.8,-13.2,-11.0,-12.6,-9.6,-6.9,-7.6,-8.5,-10.2,-10.2,-14.1,-16.1,-15.8,-18.5,-21.1,-21.9,-20.1,-19.6,-20.3,-23.6,-23.2,-23.4,-26.2,-27.7,-16.4,-8.8,-9.2,-2.2,-2.2,-4.0,-2.2,2.7,4.4,8.2,3.8,0.8,5.4,1.2,3.8,1.6,1.5,1.7,4.6,5.6,3.5,1.1,-1.7,-0.4,0.8,-5.3,-4.3,-3.5,-3.5,-5.3,-2.0,0.3,-3.7,-3.9,0.6,2.6,3.7,1.9,2.8,3.6,6.2,3.2,3.9,4.9,0.1,1.6,-1.5,-0.4,2.3,3.3,3.6,7.4,7.3,10.0,7.7,6.7,6.6,3.3,3.5,1.0,-0.4,1.8,2.4,5.2,4.0,8.7,9.6,7.9,9.1,4.1,4.0,3.3,0.4,2.8,3.0,4.7,5.0,2.0,-0.6,-0.2,0.1,0.6,3.9,1.6,2.2,6.8,10.4,9.5,9.8,13.1,10.7,8.9,10.1,10.5,12.9,13.2,12.6,15.6,14.4,11.5,9.5,9.5,7.1,9.4,8.5,5.5,4.6,7.2,5.6,7.6,6.6,7.0,5.9,7.4,8.1,8.8,5.9,6.4,6.6,5.8,4.1,5.5,7.3,9.9,11.0,13.2,13.5,11.4,11.7,11.8,13.8,17.4,17.6,19.9,20.5,22.4,20.9,21.9,21.0,20.8,26.4,27.5,27.1,28.3,29.5,30.2,29.9,29.6,31.2],"us95":[0.0,8.0,6.2,6.9,6.5,8.0,9.8,10.9,11.1,10.3,12.2,16.4,19.4,15.8,13.9,10.8,8.4,8.0,10.2,9.4,12.4,16.5,15.6,17.1,12.8,11.2,9.6,6.8,10.1,8.0,5.0,6.7,10.2,9.2,10.5,10.4,9.6,8.9,8.4,5.3,7.5,8.1,8.8,10.4,11.7,9.6,11.4,17.8,23.6,28.9,20.8,17.3,24.9,22.0,34.0,30.0,33.3,29.5,39.0,43.6,41.6,33.0,31.6,31.8,33.2,26.9,25.5,28.7,27.0,22.0,22.1,24.1,19.2,18.7,23.1,24.0,26.6,23.0,26.1,27.8,34.8,27.4,34.3,32.1,24.6,27.8,24.8,29.1,36.3,36.5,38.5,49.5,46.6,53.9,45.2,43.6,43.5,37.6,38.1,35.3,34.5,37.6,37.6,41.8,40.2,45.3,47.1,44.4,46.8,39.4,40.4,38.9,36.3,43.0,42.6,47.7,48.2,41.6,41.9,39.2,38.4,43.9,46.4,47.0,46.4,52.8,55.6,52.7,53.8,59.0,55.7,52.6,53.8,54.0,57.1,60.4,62.7,66.3,64.6,62.2,58.7,62.5,60.4,64.6,61.3,56.2,55.9,61.9,59.4,64.3,63.4,63.3,60.1,63.9,66.8,66.0,59.7,62.8,65.3,63.1,57.1,60.0,62.2,68.0,69.1,73.9,73.0,70.0,71.1,71.9,77.7,86.8,87.5,90.1,91.0,93.7,87.4,91.8,87.4,88.5,103.4,111.2,108.2,113.4,113.8,118.0,114.8,114.8,118.8]};
+  var host = document.getElementById("fig1-chart");
+  if (!host) return;
+  var C = {actual: "#0b0b0b", us: "#2a78d6", gl: "#eb6834", ea: "#1baf7a", un: "#b3b1a9"};
+  var NAME = {actual: "Actual", us: "US news", gl: "Global risk sentiment", ea: "Euro-area news", un: "Unspanned"};
+  var NS = "http://www.w3.org/2000/svg";
+  var T = D.date.map(function (s) { return Date.parse(s + "T00:00:00Z"); });
+  var n = T.length, idx = n - 1, G = null, lastW = 0;
+  var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  var DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  var tip = document.createElement("div");
+  tip.className = "tip";
+  host.appendChild(tip);
+
+  function el(name, attrs, parent) {
+    var e = document.createElementNS(NS, name);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function fmt(v) {
+    var r = Math.round(v);
+    return (r > 0 ? "+" : r < 0 ? "−" : "") + Math.abs(r);
+  }
+  function spread(vals, gap, lo) {
+    var order = vals.map(function (v, i) { return i; }).sort(function (a, b) { return vals[a] - vals[b]; }).reverse();
+    var pos = vals.slice(), prev = Infinity;
+    order.forEach(function (i) { pos[i] = Math.min(vals[i], prev - gap); prev = pos[i]; });
+    var shift = Math.max(0, lo - Math.min.apply(null, pos));
+    return pos.map(function (p) { return p + shift; });
+  }
+
+  function draw() {
+    var W = Math.max(300, Math.floor(host.clientWidth));
+    if (W === lastW) return;
+    lastW = W;
+    var narrow = W < 640;
+    var H = Math.round(Math.min(470, Math.max(290, W * 0.5)));
+    var m = {l: narrow ? 38 : 50, r: narrow ? 12 : 196, t: 24, b: 30};
+    var pw = W - m.l - m.r, ph = H - m.t - m.b;
+    var yMin = -40, yMax = 135;
+    var t0 = Date.parse("2025-12-27T00:00:00Z"), t1 = Date.parse("2026-10-08T00:00:00Z");
+    function X(t) { return m.l + (t - t0) / (t1 - t0) * pw; }
+    function Y(v) { return m.t + (yMax - v) / (yMax - yMin) * ph; }
+    var old = host.querySelector("svg");
+    if (old) host.removeChild(old);
+    var svg = el("svg", {viewBox: "0 0 " + W + " " + H, width: W, height: H, "aria-hidden": "true"});
+    host.insertBefore(svg, tip);
+    for (var v = -40; v <= 120; v += 20) {
+      el("line", {x1: m.l, x2: m.l + pw, y1: Y(v), y2: Y(v), stroke: v === 0 ? "#c3c2b7" : "#e1e0d9", "stroke-width": 1}, svg);
+      el("text", {x: m.l - 7, y: Y(v) + 4, "text-anchor": "end", "class": "tick"}, svg).textContent = v < 0 ? "−" + (-v) : String(v);
+    }
+    for (var k = 0; k < 10; k++) {
+      if (narrow && k % 2) continue;
+      el("text", {x: X(Date.UTC(2026, k, 1)), y: m.t + ph + 20, "text-anchor": "middle", "class": "tick"}, svg).textContent = MONTHS[k];
+    }
+    [["2026-02-27", "27 Feb: yields at their 2026 low"], ["2026-08-19", "19 Aug: second leg"]].forEach(function (a) {
+      var x = X(Date.parse(a[0] + "T00:00:00Z"));
+      el("line", {x1: x, x2: x, y1: m.t, y2: m.t + ph, stroke: "#c3c2b7", "stroke-width": 1}, svg);
+      el("text", {x: x + 5, y: m.t + 11, "class": "note"}, svg).textContent = narrow ? a[0].slice(8) + (a[0].slice(5, 7) === "02" ? " Feb" : " Aug") : a[1];
+    });
+    var band = "", i;
+    for (i = 0; i < n; i++) band += (i ? "L" : "M") + X(T[i]).toFixed(1) + "," + Y(D.us95[i]).toFixed(1);
+    for (i = n - 1; i >= 0; i--) band += "L" + X(T[i]).toFixed(1) + "," + Y(D.us05[i]).toFixed(1);
+    el("path", {d: band + "Z", fill: C.us, "fill-opacity": 0.13, stroke: "none"}, svg);
+    [["un", 1.75], ["ea", 2], ["gl", 2], ["us", 2.25], ["actual", 2.75]].forEach(function (a) {
+      var p = "";
+      for (var j = 0; j < n; j++) p += (j ? "L" : "M") + X(T[j]).toFixed(1) + "," + Y(D[a[0]][j]).toFixed(1);
+      el("path", {d: p, fill: "none", stroke: C[a[0]], "stroke-width": a[1], "stroke-linejoin": "round", "stroke-linecap": "round"}, svg);
+    });
+    var keys = ["actual", "us", "gl", "un", "ea"];
+    var xe = X(T[n - 1]);
+    keys.forEach(function (key) {
+      el("circle", {cx: xe, cy: Y(D[key][n - 1]), r: 4, fill: C[key], stroke: "#fcfcfb", "stroke-width": 2}, svg);
+    });
+    if (!narrow) {
+      var vals = keys.map(function (key) { return Y(D[key][n - 1]); });
+      var neg = vals.map(function (v) { return -v; });
+      var pos = spread(neg, 19, -(m.t + ph - 8)).map(function (v) { return -v; });
+      keys.forEach(function (key, j) {
+        var xl = xe + 16;
+        el("path", {d: "M" + (xe + 5) + "," + vals[j] + "L" + (xe + 11) + "," + pos[j] + "L" + xl + "," + pos[j], fill: "none", stroke: "#c3c2b7", "stroke-width": 1}, svg);
+        el("text", {x: xl + 4, y: pos[j] + 4, "class": "endlab" + (key === "actual" || key === "us" ? " strong" : "")}, svg).textContent = NAME[key] + "  " + fmt(D[key][n - 1]);
+        if (key === "us") {
+          el("text", {x: xl + 4, y: pos[j] + 19, "class": "endsub"}, svg).textContent = "5–95% of models: " + Math.round(D.us05[n - 1]) + " to " + Math.round(D.us95[n - 1]);
+        }
+      });
+    }
+    var cross = el("line", {y1: m.t, y2: m.t + ph, stroke: "#52514e", "stroke-width": 1, visibility: "hidden"}, svg);
+    var dots = {};
+    ["un", "ea", "gl", "us", "actual"].forEach(function (key) {
+      dots[key] = el("circle", {r: 4.5, fill: C[key], stroke: "#fcfcfb", "stroke-width": 2, visibility: "hidden"}, svg);
+    });
+    var hit = el("rect", {x: m.l - 6, y: m.t, width: pw + 12, height: ph, fill: "transparent"}, svg);
+    G = {X: X, Y: Y, m: m, pw: pw, ph: ph, cross: cross, dots: dots, W: W, svg: svg};
+    hit.addEventListener("pointermove", function (e) {
+      var r = svg.getBoundingClientRect();
+      show(nearest((e.clientX - r.left) * (W / r.width)));
+    });
+    hit.addEventListener("pointerleave", function () { if (document.activeElement !== host) hide(); });
+  }
+  function nearest(px) {
+    var best = 0, bd = Infinity;
+    for (var i = 0; i < n; i++) {
+      var dd = Math.abs(G.X(T[i]) - px);
+      if (dd < bd) { bd = dd; best = i; }
+    }
+    return best;
+  }
+  function row(key, value, cls) {
+    var sw = key ? '<span class="sw" style="background:' + C[key] + '"></span>' : "";
+    return '<tr' + (cls ? ' class="' + cls + '"' : "") + "><td>" + sw + (key ? NAME[key] : value[0]) + '</td><td class="n">' + (key ? value : value[1]) + "</td></tr>";
+  }
+  function show(i) {
+    if (!G) return;
+    idx = i;
+    var x = G.X(T[i]);
+    G.cross.setAttribute("x1", x); G.cross.setAttribute("x2", x); G.cross.setAttribute("visibility", "visible");
+    for (var key in G.dots) {
+      G.dots[key].setAttribute("cx", x); G.dots[key].setAttribute("cy", G.Y(D[key][i]));
+      G.dots[key].setAttribute("visibility", "visible");
+    }
+    var dt = new Date(T[i]);
+    var head = DAYS[dt.getUTCDay()] + " " + dt.getUTCDate() + " " + MONTHS[dt.getUTCMonth()] + " " + dt.getUTCFullYear() + (i === 0 ? " (start)" : "");
+    tip.innerHTML = '<div class="d">' + head + "</div><table>" +
+      row("actual", fmt(D.actual[i])) + row("us", fmt(D.us[i])) +
+      row(null, ["5–95% of models", Math.round(D.us05[i]) + " to " + Math.round(D.us95[i])], "sub") +
+      row("gl", fmt(D.gl[i])) + row("ea", fmt(D.ea[i])) + row("un", fmt(D.un[i])) +
+      '</table><div class="hint" style="margin-top:4px">bp since the close of 30 Dec 2025</div>';
+    tip.style.display = "block";
+    var tw = tip.offsetWidth, th = tip.offsetHeight;
+    var left = x + 14 + tw > G.W ? x - 14 - tw : x + 14;
+    var top = Math.max(4, Math.min(G.Y(D.actual[i]) - th / 2, G.m.t + G.ph - th));
+    tip.style.left = Math.max(0, left) + "px";
+    tip.style.top = top + "px";
+  }
+  function hide() {
+    if (!G) return;
+    G.cross.setAttribute("visibility", "hidden");
+    for (var key in G.dots) G.dots[key].setAttribute("visibility", "hidden");
+    tip.style.display = "none";
+  }
+  host.addEventListener("keydown", function (e) {
+    if (e.key === "ArrowLeft") { show(Math.max(0, idx - 1)); e.preventDefault(); }
+    else if (e.key === "ArrowRight") { show(Math.min(n - 1, idx + 1)); e.preventDefault(); }
+    else if (e.key === "Home") { show(0); e.preventDefault(); }
+    else if (e.key === "End") { show(n - 1); e.preventDefault(); }
+    else if (e.key === "Escape") { hide(); }
+  });
+  host.addEventListener("focus", function () { show(idx); });
+  host.addEventListener("blur", hide);
+  draw();
+  if (window.ResizeObserver) new ResizeObserver(function () { draw(); }).observe(host);
+  else window.addEventListener("resize", draw);
+})();
+</script>
+</body>
+</html>

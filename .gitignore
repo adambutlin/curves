@@ -23,3 +23,16 @@ reports/figures/
 
 # LSEG-derived daily series: licensed data, kept local
 reports/structural_propagation/**/lseg_private/
+
+# Licensed data, wherever it lands: never tracked
+data/raw/*
+!data/raw/.gitkeep
+**/lseg_private/
+lseg_*.csv
+
+# Credentials and local environment
+.env
+.env.*
+*.pem
+*.key
+*.p12

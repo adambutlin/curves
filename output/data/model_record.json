@@ -1,0 +1,18 @@
+{
+  "sample": [
+    "2007-01-03",
+    "2025-12-30",
+    4673
+  ],
+  "admissible_draws": 1000,
+  "acceptance_rate": 0.02497,
+  "us_share_of_euro_rate_variance": 0.34788847004365825,
+  "us10_variance_shares": {
+    "ea": 0.14080101932366015,
+    "us": 0.5149575004428858,
+    "global": 0.3442414802334539
+  },
+  "events": 18,
+  "events_hit_median_target": 15,
+  "events_mean_share_of_draws_hit": 0.499111111111111
+}
