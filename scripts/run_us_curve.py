@@ -192,7 +192,7 @@ def apply(args) -> int:
     mon = pd.DataFrame(mon_rows)
     mon.to_csv(OUT / "monthly_leaders.csv", index=False)
     roll = pd.DataFrame(roll_rows)
-    roll.to_csv(OUT / "rolling20_leaders.csv", index=False)
+    roll.to_csv(private / "rolling20_leaders.csv", index=False)
     switches = []
     for name, g in roll.groupby("outcome", sort=False):
         lead = g["leader_mt"].to_numpy()
@@ -226,8 +226,19 @@ def apply(args) -> int:
         fit26[o] = {"daily": uc.fit_stats(a, f),
                     "5d": uc.fit_stats(uc.window_sums(np.where(m, a, 0.0), 5),
                                        uc.window_sums(np.where(m, f, 0.0), 5))}
+    # exploratory (not pre-registered): monthly US-news part of the ACM fitted 10-year against
+    # monthly changes in ACM expected rates and term premium, 2007-2025 and 2026
+    i10 = idx["acm10"]
+    us_part = pd.Series(uc.contributions(eps[mt], theta[mt, i10])[:, [2, 3]].sum(1), index=dates)
+    per = dates.to_period("M")
+    mb = pd.DataFrame({"us_part": us_part.values, "rn10": dy["rn10"].fillna(0).values,
+                       "tp10": dy["tp10"].fillna(0).values}, index=per).groupby(level=0).sum()
+    mb["period"] = np.where(mb.index < pd.Period("2026-01", "M"), "2007-2025", "2026")
+    mb.to_csv(private / "monthly_bridge.csv")
+    bridge = {p_: {c: float(g["us_part"].corr(g[c])) for c in ("rn10", "tp10")} for p_, g in mb.groupby("period")}
     summary = {"model_sha256": MODEL[1], "loadings_sha256": args.loadings_sha, "last_day": last,
-               "median_target_draw": mt, "fit_2026": fit26}
+               "median_target_draw": mt, "fit_2026": fit26, "exploratory_monthly_bridge_corr": bridge}
+    print("monthly bridge", bridge)
     (OUT / "apply_summary.json").write_text(json.dumps(summary, indent=2, default=str))
     pd.set_option("display.width", 250)
     cols = ["outcome", "window", "actual_bp"] + [f"{s}_bp" for s in SHOCKS] + ["unspanned_bp"]
@@ -321,7 +332,8 @@ def forecast(args) -> int:
                                               "m3": fp(X3), "m4": fp(X4)}))
         print(year, f"{time.time() - t0:.0f}s", flush=True)
     fc = pd.concat(rows, ignore_index=True)
-    fc.to_csv(OUT / "forecasts.csv.gz", index=False)
+    (OUT / "lseg_private").mkdir(parents=True, exist_ok=True)
+    fc.to_csv(OUT / "lseg_private" / "forecasts.csv.gz", index=False)
     summ = []
     for (o, h, frm), g in fc.groupby(["outcome", "h", "from"], sort=False):
         for label, (y0, y1) in {"2012-2025": (2012, 2025), "2026": (2026, 2026)}.items():

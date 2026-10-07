@@ -23,7 +23,10 @@ overnight catch-up misread as domestic news. The 2-year Treasury's rise was a re
 of the expected course of US policy rates. The 10-year gilt's 95bp rise was mostly
 imported (US news and global risk: 84-91bp); its domestic part was Bank of England
 repricing that lifted sterling too, and the UK risk-premium (fiscal-credibility) shock
-contributed -7bp.
+contributed -7bp. Along the Treasury curve (to 5 October) US news explains the long end
+(10-year: 96 of 117bp, global risk sentiment +21bp); the 2-year rose 65bp more than any
+cross-asset shock explains, and that front-end repricing is the whole of the 2s10s
+flattening. Both this and the NY Fed's ACM read 2026 as an expected-rate selloff.
 
 ## Reading order
 
@@ -43,6 +46,8 @@ contributed -7bp.
 | [12-brandt-synchronised-results.md](12-brandt-synchronised-results.md) | Synchronised replication (close to the published spillovers), propagation, and the corrected 2026 decomposition |
 | [13-ukus-preregistration.md](13-ukus-preregistration.md) | The UK-US model, like-for-like and with a UK risk-premium shock |
 | [14-ukus-results.md](14-ukus-results.md) | The 2026 gilt selloff: imported, with a Bank of England component and no fiscal-credibility premium |
+| [15-us-curve-preregistration.md](15-us-curve-preregistration.md) | The Treasury curve (2-30 years) through the frozen cross-Atlantic model, against the NY Fed's ACM |
+| [16-us-curve-results.md](16-us-curve-results.md) | The 2026 Treasury selloff: US macro news at the long end, an unspanned front-end repricing behind the flattening, no forecasting power |
 
 ## Audit trail
 
@@ -58,13 +63,15 @@ commits intended to timestamp them could not be made in the session:
 | 08-brandt-and-2026-preregistration.md (committed `26bd4d4` before estimation) | 2026-10-04 12:34 | `3abe52df...1b4133` |
 | 11-brandt-synchronised-preregistration.md | committed `a88caf7` before estimation | |
 | 13-ukus-preregistration.md | committed `d6cf275` before estimation | |
+| 15-us-curve-preregistration.md | committed `dad0e57` before estimation | |
 
 Frozen end-2025 models used for the 2026 application: US model (commit `3cf38c2`)
 `cafa5f25144f8a4946f69cdf099c54be9709f8824b90f4c2aeb44d317765e7b8`; cross-Atlantic model
 (commit `897dea3`) `2fd02b43a05f487410059d01e799d5e547e30ec07d29401fec6f658a75511185`; synchronised
 cross-Atlantic model (commit `ee532fe`) `4b204619f83696e265a5b188c4ee31892662718fb7894f4b9783d2432e79d489`;
 UK-US models (commit `3e04261`) A `3282df3fac01ebf3338bb45fdfa57fa19cf22009fa46b55454b51c533ea0b4e2`,
-B `63d07fa9d37732bf6586de4a0836a3db76e1c54330903e4986ac9401776f6d75`.
+B `63d07fa9d37732bf6586de4a0836a3db76e1c54330903e4986ac9401776f6d75`; Treasury-curve loadings on the synchronised model
+(commit `881e10e`) `3015f33ca4af04410116fd5f53227b1a508f864b5be923e314588ddd43467158`.
 
 ## Reproduce
 
@@ -85,4 +92,8 @@ python scripts/plot_brandt_2026.py                           # figures 7-14
 python scripts/run_ukus.py                                   # UK-US models A and B (LSEG)
 python scripts/run_ukus_2026.py --sha-a 3282df3fac01ebf3338bb45fdfa57fa19cf22009fa46b55454b51c533ea0b4e2 --sha-b 63d07fa9d37732bf6586de4a0836a3db76e1c54330903e4986ac9401776f6d75
 python scripts/plot_ukus.py                                  # figures 15-17
+python scripts/run_us_curve.py freeze                        # Treasury-curve loadings, 2026 sealed (LSEG cache)
+python scripts/run_us_curve.py apply --loadings-sha 3015f33ca4af04410116fd5f53227b1a508f864b5be923e314588ddd43467158
+python scripts/run_us_curve.py forecast --loadings-sha 3015f33ca4af04410116fd5f53227b1a508f864b5be923e314588ddd43467158
+python scripts/plot_us_curve.py                              # figures 18-22
 ```
